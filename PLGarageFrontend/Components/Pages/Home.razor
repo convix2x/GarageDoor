@@ -1,0 +1,24 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using PLGarageFrontend.Services
+@inject PLGarageService PLGarage
+
+<PageTitle>Home – @instanceName</PageTitle>
+
+<h1>Welcome to @instanceName!</h1>
+
+<p>@playerCount players online</p>
+
+@code {
+    private string instanceName = "PL Garage";
+    private int playerCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var nameTask = PLGarage.GetInstanceNameAsync();
+        var countTask = PLGarage.GetPlayerCountAsync();
+        await Task.WhenAll(nameTask, countTask);
+        instanceName = nameTask.Result;
+        playerCount = countTask.Result;
+    }
+}
