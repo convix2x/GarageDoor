@@ -1,0 +1,178 @@
+﻿@page "/tracks/{Id:int}"
+@rendermode InteractiveServer
+@using PLGarageFrontend.Models
+@using PLGarageFrontend.Services
+@inject PLGarageService PLGarage
+
+<PageTitle>@(track?.Name ?? "Track") – @instanceName</PageTitle>
+
+@if (loading)
+{
+    <p>Loading...</p>
+}
+else if (track == null)
+{
+    <h1>Track not found</h1>
+}
+else
+{
+    <div style="display:flex; gap:1rem; align-items:flex-start; margin-bottom:1rem;">
+        <div style="width:256px; height:256px; background:#ccc; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:0.8rem;">
+            <img src="@($"{PLGarage.BaseUrl}/player_creations/{track.Id}/preview_image.png")"
+                 alt="@track.Name"
+                 width="256" height="256"
+                 style="display:block;"
+                 onerror="this.parentElement.innerHTML='No preview'" />
+        </div>
+        <div>
+            <h1>@track.Name</h1>
+            <p>by <a href="/players/@track.PlayerId">@track.Username</a></p>
+            @if (!string.IsNullOrWhiteSpace(track.Description))
+            {
+                <p>@track.Description</p>
+            }
+            <p>♥ @track.Hearts | ⬇ @track.Downloads | 🏁 @track.RacesStarted | 👁 @track.Views</p>
+            <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                @if (track.NumLaps > 0)
+                {
+                    <span style="border:1px solid #999; padding:1px 6px; font-size:0.75rem;">@track.NumLaps laps</span>
+                }
+                @if (!string.IsNullOrEmpty(track.RaceType))
+                {
+                    <span style="border:1px solid #999; padding:1px 6px; font-size:0.75rem;">@track.RaceType</span>
+                }
+                @if (!string.IsNullOrEmpty(track.Difficulty))
+                {
+                    <span style="border:1px solid #999; padding:1px 6px; font-size:0.75rem;">@track.Difficulty</span>
+                }
+                @if (track.IsTeamPick)
+                {
+                    <span style="border:1px solid #999; padding:1px 6px; font-size:0.75rem;">⭐ Team Pick</span>
+                }
+                @foreach (var tag in track.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    <span style="border:1px solid #999; padding:1px 6px; font-size:0.75rem;">@tag</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <h2>Leaderboard</h2>
+
+    <div style="margin-bottom:0.5rem;">
+        <label>
+            Mode:
+            <select @bind="gameType" @bind:after="LoadLeaderboard">
+                <option value="701">Race</option>
+                <option value="702">Battle</option>
+                <option value="704">Score Attack</option>
+            </select>
+        </label>
+        <label style="margin-left:1rem;">
+            Players per race:
+            <select @bind="playgroupSize" @bind:after="LoadLeaderboard">
+                <option value="1">1 (Time Trial)</option>
+                <option value="2">2</option>
+                <option value="4">4</option>
+                <option value="8">8</option>
+            </select>
+        </label>
+    </div>
+
+    @if (lbLoading)
+    {
+        <p>Loading leaderboard...</p>
+    }
+    else if (leaderboard == null || leaderboard.Entries.Count == 0)
+    {
+        <p>No scores yet.</p>
+    }
+    else
+    {
+        <table border="1" cellpadding="4" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Player</th>
+                    <th>Finish Time</th>
+                    <th>Best Lap</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var entry in leaderboard.Entries)
+                {
+                    <tr>
+                        <td>@entry.Rank</td>
+                        <td><a href="/players/@entry.PlayerId">@entry.Username</a></td>
+                        <td>@FormatTime(entry.FinishTime)</td>
+                        <td>@FormatTime(entry.BestLapTime)</td>
+                        <td>@entry.Score</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div style="margin-top:0.5rem;">
+            <button disabled="@(leaderboard.Page <= 1)" @onclick="LbPrevPage">← Prev</button>
+            <span>Page @leaderboard.Page of @leaderboard.TotalPages (@leaderboard.Total total)</span>
+            <button disabled="@(leaderboard.Page >= leaderboard.TotalPages)" @onclick="LbNextPage">Next →</button>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private TrackCreation? track;
+    private TrackLeaderboard? leaderboard;
+    private string instanceName = "PL Garage";
+    private bool loading = true;
+    private bool lbLoading = true;
+    private int gameType = 701;
+    private int playgroupSize = 1;
+    private int lbPage = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var nameTask = PLGarage.GetInstanceNameAsync();
+        var trackTask = PLGarage.GetTrackByIdAsync(Id);
+        await Task.WhenAll(nameTask, trackTask);
+        instanceName = nameTask.Result;
+        track = trackTask.Result;
+        loading = false;
+        await LoadLeaderboard();
+    }
+
+    private async Task LoadLeaderboard()
+    {
+        lbLoading = true;
+        lbPage = 1;
+        leaderboard = await PLGarage.GetTrackLeaderboardAsync(Id, lbPage, gameType: gameType, playgroupSize: playgroupSize);
+        lbLoading = false;
+    }
+
+    private async Task LbPrevPage()
+    {
+        if (lbPage > 1) { lbPage--; await FetchLbPage(); }
+    }
+
+    private async Task LbNextPage()
+    {
+        if (leaderboard is not null && lbPage < leaderboard.TotalPages) { lbPage++; await FetchLbPage(); }
+    }
+
+    private async Task FetchLbPage()
+    {
+        lbLoading = true;
+        leaderboard = await PLGarage.GetTrackLeaderboardAsync(Id, lbPage, gameType: gameType, playgroupSize: playgroupSize);
+        lbLoading = false;
+    }
+
+    private static string FormatTime(float seconds)
+    {
+        if (seconds <= 0) return "-";
+        var ts = TimeSpan.FromSeconds(seconds);
+        return $"{(int)ts.TotalMinutes}:{ts.Seconds:D2}.{ts.Milliseconds:D3}";
+    }
+}

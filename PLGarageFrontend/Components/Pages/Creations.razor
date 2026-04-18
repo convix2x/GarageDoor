@@ -9,8 +9,9 @@
 <h1>Tracks</h1>
 
 <div>
-    <button @onclick="() => SetGame(false)" disabled="@(!isMnr)">LBP Karting</button>
-    <button @onclick="() => SetGame(true)" disabled="@(isMnr)">ModNation Racers</button>
+    <button @onclick="() => SetGame(GameMode.LBPK)" disabled="@(gameMode == GameMode.LBPK)">LBP Karting</button>
+    <button @onclick="() => SetGame(GameMode.MNR)" disabled="@(gameMode == GameMode.MNR)">ModNation Racers</button>
+    <button @onclick="() => SetGame(GameMode.MNRRT)" disabled="@(gameMode == GameMode.MNRRT)">ModNation Racers: Road Trip</button>
 </div>
 
 <div>
@@ -46,15 +47,17 @@ else if (result is not null)
         @foreach (var track in result.Tracks)
         {
             <div style="border:1px solid black; padding:0.5rem; display:flex; gap:0.75rem; align-items:flex-start;">
-                <div style="width:128px; height:128px; background:#ccc; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:0.7rem; color:#555;">
-                    <img src="@($"{PLGarage.BaseUrl}/player_creations/{track.Id}/preview_image_128x128.png")"
-                         alt="@track.Name"
-                         width="128" height="128"
-                         style="display:block;"
-                         onerror="this.parentElement.innerHTML='No preview'" />
-                </div>
+                <a href="/tracks/@track.Id">
+                    <div style="width:128px; height:128px; background:#ccc; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:0.7rem; color:#555;">
+                        <img src="@($"{PLGarage.BaseUrl}/player_creations/{track.Id}/preview_image.png")"
+                             alt="@track.Name"
+                             width="128" height="128"
+                             style="display:block;"
+                             onerror="this.parentElement.innerHTML='No preview'" />
+                    </div>
+                </a>
                 <div>
-                    <div><b>@track.Name</b> by @track.Username</div>
+                    <div><a href="/tracks/@track.Id"><b>@track.Name</b></a> by <a href="/players/@track.PlayerId">@track.Username</a></div>
                     @if (!string.IsNullOrWhiteSpace(track.Description))
                     {
                         <div>@track.Description</div>
@@ -101,7 +104,8 @@ else if (result is not null)
     private string instanceName = "PL Garage";
     private string sortColumn = "created_at";
     private string keyword = "";
-    private bool isMnr = false;
+    private enum GameMode { LBPK, MNR, MNRRT }
+    private GameMode gameMode = GameMode.LBPK;
 
     protected override async Task OnInitializedAsync()
     {
@@ -109,10 +113,9 @@ else if (result is not null)
         await ReloadAsync();
     }
 
-
-    private async Task SetGame(bool mnr)
+    private async Task SetGame(GameMode mode)
     {
-        isMnr = mnr;
+        gameMode = mode;
         page = 1;
         await ReloadAsync();
     }
@@ -120,7 +123,9 @@ else if (result is not null)
     private async Task ReloadAsync()
     {
         loading = true;
-        result = await PLGarage.GetTracksAsync(page, sortColumn: sortColumn, keyword: keyword, isMnr: isMnr);
+        bool isMnr = gameMode != GameMode.LBPK;
+        string platform = gameMode == GameMode.MNRRT ? "PSV" : "PS3";
+        result = await PLGarage.GetTracksAsync(page, sortColumn: sortColumn, keyword: keyword, isMnr: isMnr, platform: platform);
         loading = false;
     }
 
@@ -138,5 +143,4 @@ else if (result is not null)
     {
         if (e.Key == "Enter") { page = 1; await ReloadAsync(); }
     }
-
 }

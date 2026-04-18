@@ -1,0 +1,128 @@
+@page "/players/{Id:int}"
+@rendermode InteractiveServer
+@using PLGarageFrontend.Models
+@using PLGarageFrontend.Services
+@inject PLGarageService PLGarage
+
+<PageTitle>@(profile?.Username ?? "Player") – @instanceName</PageTitle>
+
+@if (loading)
+{
+    <p>Loading...</p>
+}
+else if (profile == null)
+{
+    <h1>Player not found</h1>
+}
+else
+{
+    <h1>@profile.Username</h1>
+
+    @if (!string.IsNullOrWhiteSpace(profile.Quote))
+    {
+        <p><i>"@profile.Quote"</i></p>
+    }
+
+    <p>Status: @profile.Presence</p>
+    <p>Member since: @profile.CreatedAt</p>
+    <p>Skill level: @profile.SkillLevel</p>
+
+    <h2>Stats</h2>
+    <table border="1" cellpadding="4">
+        <tr><td>Hearts</td><td>@profile.Hearts</td></tr>
+        <tr><td>Points</td><td>@profile.Points</td></tr>
+        <tr><td>Creator Points</td><td>@profile.CreatorPoints</td></tr>
+        <tr><td>Experience Points</td><td>@profile.ExperiencePoints</td></tr>
+        <tr><td>Rating</td><td>@profile.Rating</td></tr>
+        <tr><td>Tracks Published</td><td>@profile.TotalTracks</td></tr>
+        <tr><td>Karts Published</td><td>@profile.TotalKarts</td></tr>
+        <tr><td>Mods Published</td><td>@profile.TotalCharacters</td></tr>
+    </table>
+
+    <h2>Racing</h2>
+    <table border="1" cellpadding="4">
+        <tr><td>Online Races</td><td>@profile.OnlineRaces</td></tr>
+        <tr><td>Wins</td><td>@profile.OnlineWins</td></tr>
+        <tr><td>Finished</td><td>@profile.OnlineFinished</td></tr>
+        <tr><td>Forfeit</td><td>@profile.OnlineForfeit</td></tr>
+        <tr><td>Disconnected</td><td>@profile.OnlineDisconnected</td></tr>
+        <tr><td>Win Streak</td><td>@profile.WinStreak</td></tr>
+        <tr><td>Longest Win Streak</td><td>@profile.LongestWinStreak</td></tr>
+        <tr><td>Longest Drift</td><td>@profile.LongestDrift</td></tr>
+        <tr><td>Longest Hang Time</td><td>@profile.LongestHangTime</td></tr>
+    </table>
+    <h2>Published Tracks</h2>
+
+    @if (tracksLoading)
+    {
+        <p>Loading tracks...</p>
+    }
+    else if (tracks == null || tracks.Tracks.Count == 0)
+    {
+        <p>todo.</p>
+    }
+    else
+    {
+        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            @foreach (var track in tracks.Tracks)
+            {
+                <div style="border:1px solid black; padding:0.5rem; display:flex; gap:0.75rem; align-items:flex-start;">
+                    <a href="/tracks/@track.Id">
+                        <img src="@($"{PLGarage.BaseUrl}/player_creations/{track.Id}/preview_image_128x128.png")"
+                             width="64" height="64"
+                             style="display:block; object-fit:cover;"
+                             onerror="this.style.display='none'" />
+                    </a>
+                    <div>
+                        <div><a href="/tracks/@track.Id"><b>@track.Name</b></a></div>
+                        @if (!string.IsNullOrWhiteSpace(track.Description))
+                        {
+                            <div>@track.Description</div>
+                        }
+                        <div>♥ @track.Hearts | ⬇ @track.Downloads | 🏁 @track.RacesStarted | 👁 @track.Views</div>
+                        <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:2px;">
+                            @if (track.IsTeamPick)
+                            {
+                                <span style="border:1px solid #999; padding:1px 6px; font-size:0.75rem;">⭐ Team Pick</span>
+                            }
+                            @foreach (var tag in track.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                            {
+                                <span style="border:1px solid #999; padding:1px 6px; font-size:0.75rem;">@tag</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private string debugMessage = "";
+    private PlayerProfile? profile;
+    private CreationsPage? tracks;
+    private string instanceName = "PL Garage";
+    private bool loading = true;
+    private bool tracksLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var nameTask = PLGarage.GetInstanceNameAsync();
+        var profileTask = PLGarage.GetPlayerInfoAsync(Id);
+        await Task.WhenAll(nameTask, profileTask);
+        instanceName = nameTask.Result;
+        profile = profileTask.Result;
+        debugMessage = $"Profile: {profile?.Username ?? "NULL"}";
+        loading = false;
+
+        if (profile != null)
+        {
+            debugMessage += " | fetching tracks...";
+            tracks = await PLGarage.GetTracksByUsernameAsync(profile.Username);
+            debugMessage += $" | got {tracks?.Tracks.Count ?? -1} tracks";
+        }
+        tracksLoading = false;
+    }
+}
