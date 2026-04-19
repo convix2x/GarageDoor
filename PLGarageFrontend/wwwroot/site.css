@@ -21,13 +21,19 @@ a {
     }
 
 .navbar {
+    background: #111;
+    border-bottom: 2px solid #f07822;
+    width: 100%;
+}
+
+.navbar-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1.25rem;
     display: flex;
     align-items: center;
     gap: 2rem;
-    padding: 0 1.5rem;
     height: 52px;
-    background: #111;
-    border-bottom: 2px solid #f07822;
 }
 
 .navbar-brand {
