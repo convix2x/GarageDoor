@@ -1,0 +1,40 @@
+﻿.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #ddd;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.profile-header-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+    .profile-header-info h1 {
+        margin: 0;
+    }
+
+.profile-quote {
+    margin: 0;
+    color: #555;
+    font-style: italic;
+}
+
+.profile-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 1rem;
+}

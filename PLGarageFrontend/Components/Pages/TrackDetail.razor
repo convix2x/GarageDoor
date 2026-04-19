@@ -4,6 +4,10 @@
 @using PLGarageFrontend.Services
 @inject PLGarageService PLGarage
 
+<HeadContent>
+    <link rel="stylesheet" href="css/trackdetail.css" />
+</HeadContent>
+
 <PageTitle>@(track?.Name ?? "Track") – @instanceName</PageTitle>
 
 @if (loading)
@@ -16,42 +20,40 @@ else if (track == null)
 }
 else
 {
-    <div style="display:flex; gap:1rem; align-items:flex-start; margin-bottom:1rem;">
-        <div style="width:256px; height:256px; background:#ccc; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:0.8rem;">
+    <div class="track-detail-header">
+        <div class="track-detail-preview">
             <img src="@($"{PLGarage.BaseUrl}/player_creations/{track.Id}/preview_image.png")"
                  alt="@track.Name"
-                 width="256" height="256"
-                 style="display:block;"
                  onerror="this.parentElement.innerHTML='No preview'" />
         </div>
-        <div>
+        <div class="track-detail-meta">
             <h1>@track.Name</h1>
             <p>by <a href="/players/@track.PlayerId">@track.Username</a></p>
             @if (!string.IsNullOrWhiteSpace(track.Description))
             {
                 <p>@track.Description</p>
             }
-            <p>♥ @track.Hearts | ⬇ @track.Downloads | 🏁 @track.RacesStarted | 👁 @track.Views</p>
-            <div style="display:flex; flex-wrap:wrap; gap:4px;">
+            <p class="track-detail-stats">♥ @track.Hearts | ⬇ @track.Downloads | 🏁 @track.RacesStarted | 👁 @track.Views</p>
+            <div class="tag-container">
                 @if (track.NumLaps > 0)
                 {
-                    <span style="border:1px solid #999; padding:1px 6px; font-size:0.75rem;">@track.NumLaps laps</span>
+                    <span class="tag-badge">@track.NumLaps laps</span>
                 }
                 @if (!string.IsNullOrEmpty(track.RaceType))
                 {
-                    <span style="border:1px solid #999; padding:1px 6px; font-size:0.75rem;">@track.RaceType</span>
+                    <span class="tag-badge">@track.RaceType</span>
                 }
                 @if (!string.IsNullOrEmpty(track.Difficulty))
                 {
-                    <span style="border:1px solid #999; padding:1px 6px; font-size:0.75rem;">@track.Difficulty</span>
+                    <span class="tag-badge">@track.Difficulty</span>
                 }
                 @if (track.IsTeamPick)
                 {
-                    <span style="border:1px solid #999; padding:1px 6px; font-size:0.75rem;">⭐ Team Pick</span>
+                    <span class="tag-badge tag-teampick">⭐ Team Pick</span>
                 }
                 @foreach (var tag in track.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                 {
-                    <span style="border:1px solid #999; padding:1px 6px; font-size:0.75rem;">@tag</span>
+                    <span class="tag-badge">@tag</span>
                 }
             </div>
         </div>
@@ -59,7 +61,7 @@ else
 
     <h2>Leaderboard</h2>
 
-    <div style="margin-bottom:0.5rem;">
+    <div class="leaderboard-controls">
         <label>
             Mode:
             <select @bind="gameType" @bind:after="LoadLeaderboard">
@@ -68,7 +70,7 @@ else
                 <option value="704">Score Attack</option>
             </select>
         </label>
-        <label style="margin-left:1rem;">
+        <label>
             Players per race:
             <select @bind="playgroupSize" @bind:after="LoadLeaderboard">
                 <option value="1">1 (Time Trial)</option>
@@ -113,7 +115,7 @@ else
             </tbody>
         </table>
 
-        <div style="margin-top:0.5rem;">
+        <div class="leaderboard-pagination">
             <button disabled="@(leaderboard.Page <= 1)" @onclick="LbPrevPage">← Prev</button>
             <span>Page @leaderboard.Page of @leaderboard.TotalPages (@leaderboard.Total total)</span>
             <button disabled="@(leaderboard.Page >= leaderboard.TotalPages)" @onclick="LbNextPage">Next →</button>

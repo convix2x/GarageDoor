@@ -4,6 +4,10 @@
 @using PLGarageFrontend.Services
 @inject PLGarageService PLGarage
 
+<HeadContent>
+    <link rel="stylesheet" href="css/profile.css" />
+</HeadContent>
+
 <PageTitle>@(profile?.Username ?? "Player") – @instanceName</PageTitle>
 
 @if (loading)
@@ -16,23 +20,25 @@ else if (profile == null)
 }
 else
 {
-    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem;">
-        <img src="@($"{PLGarage.BaseUrl}/player_avatars/{Id}/primary.png")"
+    <div class="profile-header">
+        <img class="profile-avatar"
+             src="@($"{PLGarage.BaseUrl}/player_avatars/{Id}/primary.png")"
              width="80" height="80"
-             style="border-radius:50%; background:#ddd; object-fit:cover;"
              onerror="this.style.display='none'" />
-        <div>
-            <h1 style="margin:0;">@profile.Username</h1>
+        <div class="profile-header-info">
+            <h1>@profile.Username</h1>
             @if (!string.IsNullOrWhiteSpace(profile.Quote))
             {
-                <p style="margin:0;"><i>"@profile.Quote"</i></p>
+                <p class="profile-quote">"@profile.Quote"</p>
             }
         </div>
     </div>
 
-    <p>Status: @profile.Presence</p>
-    <p>Member since: @profile.CreatedAt</p>
-    <p>Skill level: @profile.SkillLevel</p>
+    <div class="profile-meta">
+        <span>Status: @profile.Presence</span>
+        <span>Member since: @profile.CreatedAt</span>
+        <span>Skill level: @profile.SkillLevel</span>
+    </div>
 
     <h2>Creations</h2>
     <div class="stat-row">
@@ -133,14 +139,14 @@ else
                         <a href="/tracks/@track.Id">
                             <img src="@($"{PLGarage.BaseUrl}/player_creations/{track.Id}/preview_image.png")"
                                  alt="@track.Name"
-                                 onerror="this.parentElement.innerHTML='No preview'" />
+                                 onerror="this.parentElement.innerHTML=''" />
                         </a>
                     </div>
                     <div class="track-info">
                         <div class="track-name"><a href="/tracks/@track.Id">@track.Name</a></div>
                         @if (!string.IsNullOrWhiteSpace(track.Description))
                         {
-                            <div>@track.Description</div>
+                            <div class="track-description">@track.Description</div>
                         }
                         <div class="track-stats">♥ @track.Hearts | ⬇ @track.Downloads | 🏁 @track.RacesStarted | 👁 @track.Views</div>
                         <div class="tag-container">
@@ -178,14 +184,14 @@ else
                         <a href="/tracks/@track.Id">
                             <img src="@($"{PLGarage.BaseUrl}/player_creations/{track.Id}/preview_image.png")"
                                  alt="@track.Name"
-                                 onerror="this.parentElement.innerHTML='No preview'" />
+                                 onerror="this.parentElement.innerHTML=''" />
                         </a>
                     </div>
                     <div class="track-info">
                         <div class="track-name"><a href="/tracks/@track.Id">@track.Name</a></div>
                         @if (!string.IsNullOrWhiteSpace(track.Description))
                         {
-                            <div>@track.Description</div>
+                            <div class="track-description">@track.Description</div>
                         }
                         <div class="track-stats">♥ @track.Hearts | ⬇ @track.Downloads | 🏁 @track.RacesStarted | 👁 @track.Views</div>
                         <div class="tag-container">
@@ -226,25 +232,23 @@ else
         instanceName = nameTask.Result;
         profile = profileTask.Result;
         loading = false;
-        var mnrTrackCountTask = PLGarage.GetCreationCountAsync(Id, "TRACK");
-        var mnrModCountTask = PLGarage.GetCreationCountAsync(Id, "CHARACTER");
-        var mnrKartCountTask = PLGarage.GetCreationCountAsync(Id, "KART");
-        await Task.WhenAll(mnrTrackCountTask, mnrModCountTask, mnrKartCountTask);
-        mnrTrackCount = mnrTrackCountTask.Result;
-        var mnrModPS3Task = PLGarage.GetCreationCountAsync(Id, "CHARACTER", "PS3");
-        var mnrModPSVTask = PLGarage.GetCreationCountAsync(Id, "CHARACTER", "PSV");
-        await Task.WhenAll(mnrModPS3Task, mnrModPSVTask);
-        mnrModCount = mnrModPS3Task.Result + mnrModPSVTask.Result;
-        var mnrKartPS3Task = PLGarage.GetCreationCountAsync(Id, "KART", "PS3");
-        var mnrKartPSVTask = PLGarage.GetCreationCountAsync(Id, "KART", "PSV");
-        await Task.WhenAll(mnrKartPS3Task, mnrKartPSVTask);
-        mnrKartCount = mnrKartPS3Task.Result + mnrKartPSVTask.Result;
 
         if (profile != null)
         {
+            var mnrTrackCountTask = PLGarage.GetCreationCountAsync(Id, "TRACK");
+            var mnrModPS3Task = PLGarage.GetCreationCountAsync(Id, "CHARACTER", "PS3");
+            var mnrModPSVTask = PLGarage.GetCreationCountAsync(Id, "CHARACTER", "PSV");
+            var mnrKartPS3Task = PLGarage.GetCreationCountAsync(Id, "KART", "PS3");
+            var mnrKartPSVTask = PLGarage.GetCreationCountAsync(Id, "KART", "PSV");
             var lbpkTask = PLGarage.GetTracksByUsernameAsync(profile.Username, isMnr: false);
             var mnrTask = PLGarage.GetTracksByUsernameAsync(profile.Username, isMnr: true);
-            await Task.WhenAll(lbpkTask, mnrTask);
+
+            await Task.WhenAll(mnrTrackCountTask, mnrModPS3Task, mnrModPSVTask,
+                               mnrKartPS3Task, mnrKartPSVTask, lbpkTask, mnrTask);
+
+            mnrTrackCount = mnrTrackCountTask.Result;
+            mnrModCount = mnrModPS3Task.Result + mnrModPSVTask.Result;
+            mnrKartCount = mnrKartPS3Task.Result + mnrKartPSVTask.Result;
             lbpkTracks = lbpkTask.Result;
             mnrTracks = mnrTask.Result;
         }

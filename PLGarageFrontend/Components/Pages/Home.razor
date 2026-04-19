@@ -4,13 +4,15 @@
 @using PLGarageFrontend.Services
 @inject PLGarageService PLGarage
 
+<HeadContent>
+    <link rel="stylesheet" href="css/home.css" />
+</HeadContent>
+
 <PageTitle>Home – @instanceName</PageTitle>
 
 <h1>Welcome to @instanceName!</h1>
 
-<p>
-    @playerCountLBPK LBP Karting / @playerCountMNR ModNation Racers players online
-</p>
+<p>@playerCountLBPK LBP Karting / @playerCountMNR ModNation Racers players online</p>
 
 <div class="home-columns">
     <div class="home-column">
@@ -38,7 +40,7 @@
                         </a>
                         <div class="home-card-info">
                             <div><a href="/tracks/@c.Id"><b>@c.Name</b></a></div>
-                            <div class="home-card-sub">by <a href="/players/@c.PlayerId">@c.Username</a> @c.Game</div>
+                            <div class="home-card-sub">by <a href="/players/@c.PlayerId">@c.Username</a> · @c.Game</div>
                             <div class="home-card-stats">♥ @c.Hearts | ⬇ @c.Downloads</div>
                         </div>
                     </div>
@@ -72,7 +74,7 @@
                         </a>
                         <div class="home-card-info">
                             <div><a href="/tracks/@c.Id"><b>@c.Name</b></a></div>
-                            <div class="home-card-sub">by <a href="/players/@c.PlayerId">@c.Username</a> @c.Game</div>
+                            <div class="home-card-sub">by <a href="/players/@c.PlayerId">@c.Username</a> · @c.Game</div>
                             <div class="home-card-stats">♥ @c.Hearts | ⬇ @c.Downloads</div>
                         </div>
                     </div>
@@ -81,87 +83,6 @@
         }
     </div>
 </div>
-
-<style>
-    .home-columns {
-        display: flex;
-        gap: 2rem;
-        margin-top: 1.5rem;
-        align-items: flex-start;
-    }
-
-    .home-column {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .home-scroll {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        max-height: 600px;
-        overflow-y: auto;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        padding: 0.5rem;
-        background: #fff;
-    }
-
-    .home-card {
-        display: flex;
-        gap: 0.75rem;
-        align-items: center;
-        padding: 0.5rem;
-        border-radius: 4px;
-        transition: background 0.1s;
-    }
-
-        .home-card:hover {
-            background: #f5f5f5;
-        }
-
-    .home-card-thumb {
-        width: 64px;
-        height: 64px;
-        flex-shrink: 0;
-        background: #eee;
-        border-radius: 4px;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-        .home-card-thumb img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-    .home-card-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
-        min-width: 0;
-    }
-
-        .home-card-info a {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: block;
-        }
-
-    .home-card-sub {
-        font-size: 0.8rem;
-        color: #666;
-    }
-
-    .home-card-stats {
-        font-size: 0.8rem;
-        color: #888;
-    }
-</style>
 
 @code {
     private string instanceName = "PL Garage";
@@ -203,20 +124,21 @@
             .Take(40)
             .ToList();
         recentLoading = false;
+
         var lbpkPicksTask = PLGarage.GetTeamPicksAsync(isMnr: false);
         var mnrPicksTask = PLGarage.GetTeamPicksAsync(isMnr: true);
         await Task.WhenAll(lbpkPicksTask, mnrPicksTask);
 
-        teamPicks = lbpkPicksTask.Result.Tracks
-            .Concat(mnrPicksTask.Result.Tracks)
+        var lbpkPicks = lbpkPicksTask.Result.Tracks;
+        lbpkPicks.ForEach(c => c.Game = "LBPK");
+
+        var mnrPicks = mnrPicksTask.Result.Tracks;
+        mnrPicks.ForEach(c => c.Game = c.Platform == "PSV" ? "MNR: RT" : "MNR");
+
+        teamPicks = lbpkPicks
+            .Concat(mnrPicks)
             .OrderByDescending(c => c.FirstPublished)
             .ToList();
         teamPicksLoading = false;
     }
-
-    private string GameLabel(TrackCreation c) => c.Platform switch
-    {
-        "PSV" => "MNR: RT",
-        _ => c.RaceType == "" && c.NumLaps == 0 ? "MNR" : "LBPK"
-    };
 }
