@@ -1,0 +1,160 @@
+﻿@page "/photos"
+@rendermode InteractiveServer
+@using PLGarageFrontend.Models
+@using PLGarageFrontend.Services
+@inject PLGarageService PLGarage
+@inject NavigationManager Nav
+
+<HeadContent>
+    <link rel="stylesheet" href="css/photos.css" />
+</HeadContent>
+
+<PageTitle>Photos – @instanceName</PageTitle>
+
+<h1>Photos</h1>
+
+<div class="controls-row">
+    <input type="search"
+           placeholder="Filter by username..."
+           @bind="username"
+           @bind:event="oninput"
+           @onkeydown="OnSearchKeyDown" />
+    @if (!string.IsNullOrWhiteSpace(username))
+    {
+        <button @onclick="ClearFilter">✕ Clear</button>
+    }
+</div>
+
+@if (!string.IsNullOrWhiteSpace(username))
+{
+    <p>Showing photos by <b>@username</b></p>
+}
+
+@if (loading)
+{
+    <p>Loading...</p>
+}
+else if (result == null || result.Photos.Count == 0)
+{
+    <p>No photos found.</p>
+}
+else
+{
+    <p>Showing @result.Photos.Count of @result.Total photos — Page @result.Page / @result.TotalPages</p>
+
+    <div class="photo-grid">
+        @foreach (var photo in result.Photos)
+        {
+            <div class="photo-card">
+                <div class="photo-img-wrap">
+                    <img src="@($"{PLGarage.BaseUrl}/player_creations/{photo.Id}/data.jpg")"
+                         alt="Photo by @photo.Username"
+                         onerror="this.parentElement.innerText='No preview';" />
+                </div>
+                <div class="photo-meta">
+                    <span class="photo-meta-username">
+                        <a href="/photos?username=@Uri.EscapeDataString(photo.Username)">@photo.Username</a>
+                    </span>
+                    @if (photo.TrackId <= 0 || photo.TrackId == 575 || photo.TrackId == 4912)
+                    {
+                        <span>📍 @GetTrackName(photo.TrackId)</span>
+                    }
+                    else if (trackNames.ContainsKey(photo.TrackId))
+                    {
+                        <span>📍 <a href="/tracks/@photo.TrackId">@GetTrackName(photo.TrackId)</a></span>
+                    }
+                    else
+                    {
+                        <span>📍 The Moon</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="pagination-bar">
+        <button disabled="@(result.Page <= 1)" @onclick="PrevPage">← Prev</button>
+        <span>Page @result.Page of @result.TotalPages</span>
+        <button disabled="@(result.Page >= result.TotalPages)" @onclick="NextPage">Next →</button>
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery] public string? username { get; set; }
+
+    private PhotosPage? result;
+    private bool loading = true;
+    private int page = 1;
+    private string instanceName = "PL Garage";
+
+    protected override async Task OnInitializedAsync()
+    {
+        instanceName = await PLGarage.GetInstanceNameAsync();
+        await ReloadAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        page = 1;
+        await ReloadAsync();
+    }
+
+    private Dictionary<int, string> trackNames = new();
+
+    private async Task ReloadAsync()
+    {
+        loading = true;
+        result = await PLGarage.GetPhotosAsync(page, username: string.IsNullOrWhiteSpace(username) ? null : username);
+    
+        // batch fetch track names for tracks that aren't the pod
+        if (result != null)
+        {
+            var ids = result.Photos
+                .Select(p => p.TrackId)
+                .Where(id => id > 0 && id != 575 && id != 4912)
+                .Distinct()
+                .ToList();
+
+            var tasks = ids.Select(id => PLGarage.GetTrackByIdAsync(id));
+            var tracks = await Task.WhenAll(tasks);
+
+            trackNames = ids.Zip(tracks)
+                .Where(x => x.Second != null)
+                .ToDictionary(x => x.First, x => x.Second!.Name);
+        }
+
+        loading = false;
+    }
+
+    private string GetTrackName(int trackId) => trackId switch
+    {
+        575 or 4912 => "The Pod",
+        // if the track doesn't exist, but a photo was taken there and it's not The Pod, we can assume it's
+        // on the moon.
+        _ => trackNames.TryGetValue(trackId, out var name) ? name : "The Moon"
+    };
+
+    private async Task PrevPage()
+    {
+        if (page > 1) { page--; await ReloadAsync(); }
+    }
+
+    private async Task NextPage()
+    {
+        if (result is not null && page < result.TotalPages) { page++; await ReloadAsync(); }
+    }
+
+    private async Task OnSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            page = 1;
+            Nav.NavigateTo($"/photos{(string.IsNullOrWhiteSpace(username) ? "" : $"?username={Uri.EscapeDataString(username)}")}");
+        }
+    }
+
+    private void ClearFilter()
+    {
+        Nav.NavigateTo("/photos");
+    }
+}

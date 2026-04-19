@@ -1,0 +1,54 @@
+﻿@page "/eula"
+@rendermode InteractiveServer
+@using PLGarageFrontend.Services
+@inject PLGarageService PLGarage
+
+<PageTitle>EULA – @instanceName</PageTitle>
+
+<h1>End User License Agreement</h1>
+
+@if (loading)
+{
+    <p>Loading...</p>
+}
+else if (string.IsNullOrWhiteSpace(eulaText))
+{
+    <p>Could not load the user agreement.</p>
+}
+else
+{
+    <div class="eula-text">
+        @foreach (var line in eulaText.Split('\n'))
+        {
+            <p>@line</p>
+        }
+    </div>
+}
+
+<style>
+    .eula-text {
+        max-width: 700px;
+        line-height: 1.7;
+        color: #333;
+    }
+
+        .eula-text p {
+            margin-bottom: 0.75rem;
+        }
+</style>
+
+@code {
+    private string instanceName = "PL Garage";
+    private string eulaText = "";
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var nameTask = PLGarage.GetInstanceNameAsync();
+        var eulaTask = PLGarage.GetEulaAsync();
+        await Task.WhenAll(nameTask, eulaTask);
+        instanceName = nameTask.Result;
+        eulaText = eulaTask.Result;
+        loading = false;
+    }
+}

@@ -81,3 +81,19 @@ public class TrackLeaderboard
     public int Page { get; set; }
     public List<LeaderboardEntry> Entries { get; set; } = [];
 }
+
+public class PhotoEntry
+{
+    public int Id { get; set; }
+    public string Username { get; set; } = "";
+    public int TrackId { get; set; }
+    public string AssociatedUsernames { get; set; } = "";
+}
+
+public class PhotosPage
+{
+    public List<PhotoEntry> Photos { get; set; } = [];
+    public int Total { get; set; }
+    public int TotalPages { get; set; }
+    public int Page { get; set; }
+}

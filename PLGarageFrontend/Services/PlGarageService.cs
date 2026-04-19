@@ -360,4 +360,44 @@ public class PLGarageService(HttpClient http)
         }
         catch { return null; }
     }
+
+    public async Task<PhotosPage> GetPhotosAsync(int page = 1, int perPage = 40, string? username = null)
+    {
+        var url = $"{BaseUrl}/photos/search.xml?page={page}&per_page={perPage}";
+        if (!string.IsNullOrWhiteSpace(username))
+            url += $"&username={Uri.EscapeDataString(username)}";
+
+        try
+        {
+            var xml = await http.GetStringAsync(url);
+            var doc = XDocument.Parse(xml);
+            var wrapper = doc.Descendants("photos").FirstOrDefault();
+
+            return new PhotosPage
+            {
+                Total = (int?)wrapper?.Attribute("total") ?? 0,
+                TotalPages = (int?)wrapper?.Attribute("total_pages") ?? 0,
+                Page = (int?)wrapper?.Attribute("current_page") ?? 1,
+                Photos = doc.Descendants("photo").Select(x => new PhotoEntry
+                {
+                    Id = (int?)x.Attribute("id") ?? 0,
+                    Username = (string?)x.Attribute("username") ?? "",
+                    TrackId = (int?)x.Attribute("track_id") ?? 0,
+                    AssociatedUsernames = (string?)x.Attribute("associated_usernames") ?? "",
+                }).ToList()
+            };
+        }
+        catch { return new PhotosPage(); }
+    }
+
+    public async Task<string> GetEulaAsync()
+    {
+        try
+        {
+            var xml = await http.GetStringAsync($"{BaseUrl}/policies/view.xml?policy_type=0&platform=PS3&username=ufg");
+            var doc = XDocument.Parse(xml);
+            return (string?)doc.Descendants("policy").FirstOrDefault()?.Attribute("text") ?? "";
+        }
+        catch { return ""; }
+    }
 }

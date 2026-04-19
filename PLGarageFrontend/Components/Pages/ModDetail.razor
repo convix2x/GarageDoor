@@ -20,6 +20,9 @@ else if (creation == null)
 }
 else
 {
+    @inject IJSRuntime JS
+
+    <button @onclick="GoBack">← Back</button>
     <div class="track-detail-header">
         <div class="track-detail-preview">
             <img src="@($"{PLGarage.BaseUrl}/player_creations/{creation.Id}/preview_image.png")"
@@ -54,6 +57,7 @@ else
     private TrackCreation? creation;
     private string instanceName = "PL Garage";
     private bool loading = true;
+    private async Task GoBack() => await JS.InvokeVoidAsync("history.back");
 
     protected override async Task OnInitializedAsync()
     {

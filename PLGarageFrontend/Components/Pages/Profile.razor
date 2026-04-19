@@ -20,6 +20,9 @@ else if (profile == null)
 }
 else
 {
+    @inject IJSRuntime JS
+
+    <button @onclick="GoBack">← Back</button>
     <div class="profile-header">
         <img class="profile-avatar"
              src="@($"{PLGarage.BaseUrl}/player_avatars/{Id}/primary.png")"
@@ -223,7 +226,7 @@ else
     private int mnrTrackCount;
     private int mnrModCount;
     private int mnrKartCount;
-
+    private async Task GoBack() => await JS.InvokeVoidAsync("history.back");
     protected override async Task OnInitializedAsync()
     {
         var nameTask = PLGarage.GetInstanceNameAsync();
