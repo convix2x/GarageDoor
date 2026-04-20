@@ -1,0 +1,117 @@
+﻿@page "/moderation/login"
+@rendermode InteractiveServer
+@using PLGarageFrontend.Services
+@inject ModerationService Moderation
+
+<PageTitle>Moderation</PageTitle>
+
+<h1>Login</h1>
+
+@if (result == LoginResult.Success)
+{
+    <p class="mod-login-result mod-success">success</p>
+}
+else if (result == LoginResult.Fail)
+{
+    <p class="mod-login-result mod-fail">fail</p>
+}
+
+@if (result != LoginResult.Success)
+{
+    <div class="mod-login-form">
+        <div class="mod-login-field">
+            <label>Username</label>
+            <input type="text" @bind="username" @bind:event="oninput" disabled="@loading" />
+        </div>
+        <div class="mod-login-field">
+            <label>Password</label>
+            <input type="password" @bind="password" @bind:event="oninput" disabled="@loading" />
+        </div>
+        <button @onclick="DoLogin" disabled="@loading">
+            @(loading ? "Logging in..." : "Login")
+        </button>
+        @if (result == LoginResult.Error)
+        {
+            <p class="mod-login-error">Could not reach the server. Check the backend is running.</p>
+        }
+    </div>
+}
+<!---->temporary<!---->
+<style>
+    .mod-login-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        max-width: 320px;
+        margin-top: 1rem;
+    }
+    .mod-login-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    .mod-login-field input {
+        padding: 0.4rem 0.6rem;
+        font-size: 1rem;
+    }
+    .mod-login-form button {
+        padding: 0.5rem;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+    .mod-login-result {
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 1rem 0;
+    }
+    .mod-success { color: green; }
+    .mod-fail    { color: red; }
+    .mod-login-warning {
+        color: darkorange;
+        max-width: 480px;
+    }
+    .mod-login-error {
+        color: red;
+        font-size: 0.9rem;
+    }
+</style>
+
+@code {
+    private string username = "";
+    private string password = "";
+    private bool loading = false;
+
+    private enum LoginResult { None, Success, Fail, Error }
+    private LoginResult result = LoginResult.None;
+
+    private async Task DoLogin()
+    {
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            return;
+
+        loading = true;
+        result = LoginResult.None;
+
+        try
+        {
+            var ok = await Moderation.LoginAsync(username, password);
+
+            if (ok)
+            {
+                result = LoginResult.Success;
+            }
+            else
+            {
+                result = LoginResult.Fail;
+            }
+        }
+        catch
+        {
+            result = LoginResult.Error;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}
