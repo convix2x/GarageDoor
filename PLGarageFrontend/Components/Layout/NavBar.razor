@@ -1,0 +1,28 @@
+﻿@rendermode InteractiveServer
+@using PLGarageFrontend.Services
+@inject PLGarageService PLGarage
+
+<nav class="navbar">
+    <div class="navbar-container">
+        <a class="navbar-brand" href="/">
+            <span class="navbar-icon"></span>
+            @instanceName
+        </a>
+        <div class="navbar-links">
+            <a href="/">Home</a>
+            <a href="/tracks">Tracks</a>
+            <a href="/mods">Mods</a>
+            <a href="/karts">Karts</a>
+            <a href="/photos">Photos</a>
+        </div>
+    </div>
+</nav>
+
+@code {
+    private string instanceName = "PL Garage";
+
+    protected override async Task OnInitializedAsync()
+    {
+        instanceName = await PLGarage.GetInstanceNameAsync();
+    }
+}
