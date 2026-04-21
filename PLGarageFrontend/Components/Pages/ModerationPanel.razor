@@ -1,0 +1,313 @@
+﻿@page "/moderation/panel"
+@rendermode InteractiveServer
+@using PLGarageFrontend.Services
+@using System.Text.Json
+@inject ModerationService Moderation
+@inject NavigationManager Nav
+
+<PageTitle>Moderation Panel</PageTitle>
+
+<link href="css/mod.css" rel="stylesheet" />
+
+<h1>Moderation Panel</h1>
+
+@if (!Moderation.IsLoggedIn)
+{
+    <p>You are not logged in., and you do not have permission to access this page.</p>
+    <p>If you are a moderator of this instance, <a href="/moderation/login">Log in here</a>.</p>
+    <p style="color: #999; font-size: 0.85rem;"></p>
+}
+else
+{
+    <div class="controls-row" style="justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div>
+            <strong>Authenticated as @modUsername</strong>
+        </div>
+        <div>
+            <a href="#" @onclick="DoLogout">Log out</a>
+        </div>
+    </div>
+
+    <section class="mod-section">
+        <h2>Announcements</h2>
+        
+        <div class="mod-create-announcement">
+            <h3>Create new announcement</h3>
+            <div class="mod-form">
+                <div class="mod-field">
+                    <label>Platform</label>
+                    <select @bind="newPlatform">
+                        <option value="PS3">ModNation Racers</option>
+                        <option value="PSV">ModNation Racers: Road Trip</option>
+                        <option value="PSP">ModNation Racers PSP</option>
+                        <option value="WEB">WEB</option>
+                    </select>
+                </div>
+                <div class="mod-field">
+                    <label>Language Code</label>
+                    <input type="text" @bind="newLanguageCode" placeholder="en-US" />
+                </div>
+                <div class="mod-field">
+                    <label>Subject</label>
+                    <input type="text" @bind="newSubject" placeholder="Important Update" />
+                </div>
+                <div class="mod-field">
+                    <label>Text</label>
+                    <textarea @bind="newText" rows="4" placeholder="Announcement message..."></textarea>
+                </div>
+                <button @onclick="CreateAnnouncement" disabled="@creating">
+                    @(creating ? "Creating..." : "Create announcement")
+                </button>
+                @if (!string.IsNullOrEmpty(createMessage))
+                {
+                    <p class="mod-message">@createMessage</p>
+                }
+            </div>
+        </div>
+
+        <div class="mod-announcements-list">
+            <h3>Existing announcements</h3>
+            @if (loadingAnnouncements)
+            {
+                <p>Loading...</p>
+            }
+            else if (announcements.Count == 0)
+            {
+                <p>No announcements found.</p>
+            }
+            else
+            {
+                <table class="mod-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Platform</th>
+                            <th>Lang</th>
+                            <th>Subject</th>
+                            <th>Text</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in announcements)
+                        {
+                            <tr>
+                                <td>@a.Id</td>
+                                <td>@a.Platform</td>
+                                <td>@a.LanguageCode</td>
+                                <td>@a.Subject</td>
+                                <td class="mod-text-preview">@a.Text</td>
+                                <td>@a.CreatedAt</td>
+                                <td>
+                                    <button @onclick="() => DeleteAnnouncement(a.Id)"
+                                            disabled="@deleting"
+                                            class="mod-delete-btn">
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                
+                <div class="mod-pagination">
+                    <button @onclick="PrevPage" disabled="@(currentPage <= 1 || loadingAnnouncements)">Previous</button>
+                    <span>Page @currentPage of @totalPages</span>
+                    <button @onclick="NextPage" disabled="@(currentPage >= totalPages || loadingAnnouncements)">Next</button>
+                </div>
+            }
+        </div>
+    </section>
+}
+
+@code {
+    private class Announcement
+    {
+        public int Id { get; set; }
+        public string Platform { get; set; } = "";
+        public string LanguageCode { get; set; } = "";
+        public string Subject { get; set; } = "";
+        public string Text { get; set; } = "";
+        public string CreatedAt { get; set; } = "";
+    }
+
+    private List<Announcement> announcements = new();
+    private bool loadingAnnouncements = false;
+    private int currentPage = 1;
+    private int totalPages = 1;
+    private const int perPage = 20;
+
+    private string newPlatform = "PS3";
+    private string newLanguageCode = "en-US";
+    private string newSubject = "";
+    private string newText = "";
+    private bool creating = false;
+    private string createMessage = "";
+    private bool deleting = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        try
+        {
+            await Moderation.InitializeAsync();
+            modUsername = Moderation.Username;
+
+            if (!Moderation.IsLoggedIn)
+            {
+                Nav.NavigateTo("/moderation/login");
+                return;
+            }
+        }
+        catch { }
+
+        await LoadAnnouncements();
+        StateHasChanged();
+    }
+
+    private async Task LoadAnnouncements()
+    {
+        loadingAnnouncements = true;
+        try
+        {
+            var result = await Moderation.GetAnnouncementsAsync(currentPage, perPage);
+            if (result != null)
+            {
+                var doc = JsonDocument.Parse(result);
+                var root = doc.RootElement;
+                
+                if (root.TryGetProperty("Total", out var totalProp))
+                {
+                    var total = totalProp.GetInt32();
+                    totalPages = (int)Math.Ceiling(total / (double)perPage);
+                }
+                
+                if (root.TryGetProperty("Page", out var pageProp) && pageProp.ValueKind == JsonValueKind.Array)
+                {
+                    announcements = pageProp.EnumerateArray().Select(a => new Announcement
+                    {
+                        Id = a.TryGetProperty("Id", out var id) ? id.GetInt32() : 0,
+                        Platform = a.TryGetProperty("Platform", out var plat) ? PlatformIntToString(plat.GetInt32()) : "",
+                        LanguageCode = a.TryGetProperty("LanguageCode", out var lang) ? lang.GetString() ?? "" : "",
+                        Subject = a.TryGetProperty("Subject", out var subj) ? subj.GetString() ?? "" : "",
+                        Text = a.TryGetProperty("Text", out var txt) ? txt.GetString() ?? "" : "",
+                        CreatedAt = a.TryGetProperty("CreatedAt", out var created) ? created.GetString() ?? "" : "",
+                    }).ToList();
+                }
+                else
+                {
+                    announcements = new();
+                }
+            }
+        }
+        catch
+        {
+            announcements = new();
+        }
+        finally
+        {
+            loadingAnnouncements = false;
+        }
+    }
+
+    private async Task CreateAnnouncement()
+    {
+        if (string.IsNullOrWhiteSpace(newSubject) || string.IsNullOrWhiteSpace(newText))
+        {
+            createMessage = "Subject and text are required.";
+            return;
+        }
+
+        creating = true;
+        createMessage = "";
+        
+        try
+        {
+            var result = await Moderation.CreateAnnouncementAsync(newLanguageCode, newSubject, newText, newPlatform);
+            if (result == "ok")
+            {
+                createMessage = "Announcement created successfully!";
+                newSubject = "";
+                newText = "";
+                newLanguageCode = "en-US";
+                await LoadAnnouncements();
+            }
+            else
+            {
+                createMessage = $"Failed to create announcement: {result}";
+            }
+        }
+        catch (Exception ex)
+        {
+            createMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            creating = false;
+        }
+    }
+
+    private async Task DeleteAnnouncement(int id)
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this announcement?"))
+            return;
+
+        deleting = true;
+        try
+        {
+            var result = await Moderation.DeleteAnnouncementAsync(id);
+            if (result == "ok")
+            {
+                await LoadAnnouncements();
+            }
+        }
+        catch { }
+        finally
+        {
+            deleting = false;
+        }
+    }
+
+    private async Task PrevPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            await LoadAnnouncements();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (currentPage < totalPages)
+        {
+            currentPage++;
+            await LoadAnnouncements();
+        }
+    }
+
+    private string modUsername = "";
+
+    private async Task DoLogout()
+    {
+        await Moderation.Logout();
+        Nav.NavigateTo("/moderation/login");
+    }
+
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+
+    private static string PlatformIntToString(int platformInt)
+    {
+        return platformInt switch
+        {
+            1 => "PSP",
+            2 => "PS3",
+            3 => "WEB",
+            4 => "PSV",
+            _ => platformInt.ToString()
+        };
+    }
+}

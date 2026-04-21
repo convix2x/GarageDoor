@@ -2,14 +2,25 @@
 @rendermode InteractiveServer
 @using PLGarageFrontend.Services
 @inject ModerationService Moderation
+@inject NavigationManager Nav
 
-<PageTitle>Moderation</PageTitle>
+<PageTitle>Moderation Login</PageTitle>
 
-<h1>Login</h1>
+<link href="css/mod.css" rel="stylesheet" />
+
+<h1>Moderation Login</h1>
 
 @if (result == LoginResult.Success)
 {
     <p class="mod-login-result mod-success">success</p>
+    <p style="color: #999; font-size: 0.85rem;">Redirecting to panel... (IsLoggedIn: @Moderation.IsLoggedIn)</p>
+    @if (isInsecure)
+    {
+        <p class="mod-login-warning">
+            Warning: You logged in with default credentials (<code>admin</code> / <code>admin</code>).
+            This server is insecure - please change the credentials in the backend configuration before using it in production!
+        </p>
+    }
 }
 else if (result == LoginResult.Fail)
 {
@@ -36,50 +47,12 @@ else if (result == LoginResult.Fail)
         }
     </div>
 }
-<!---->temporary<!---->
-<style>
-    .mod-login-form {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        max-width: 320px;
-        margin-top: 1rem;
-    }
-    .mod-login-field {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-    .mod-login-field input {
-        padding: 0.4rem 0.6rem;
-        font-size: 1rem;
-    }
-    .mod-login-form button {
-        padding: 0.5rem;
-        font-size: 1rem;
-        cursor: pointer;
-    }
-    .mod-login-result {
-        font-size: 2rem;
-        font-weight: bold;
-        margin: 1rem 0;
-    }
-    .mod-success { color: green; }
-    .mod-fail    { color: red; }
-    .mod-login-warning {
-        color: darkorange;
-        max-width: 480px;
-    }
-    .mod-login-error {
-        color: red;
-        font-size: 0.9rem;
-    }
-</style>
 
 @code {
     private string username = "";
     private string password = "";
     private bool loading = false;
+    private bool isInsecure = false;
 
     private enum LoginResult { None, Success, Fail, Error }
     private LoginResult result = LoginResult.None;
@@ -99,6 +72,10 @@ else if (result == LoginResult.Fail)
             if (ok)
             {
                 result = LoginResult.Success;
+                isInsecure = username == "admin" && password == "admin";
+
+                StateHasChanged();
+                Nav.NavigateTo("/moderation/panel");
             }
             else
             {

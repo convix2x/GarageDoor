@@ -8,26 +8,53 @@
 
 using System.Net;
 using System.Net.Http.Headers;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
 namespace PLGarageFrontend.Services;
 
 public class ModerationService
 {
     private readonly HttpClient _http;
+    private readonly ProtectedLocalStorage _storage;
+    // We use ProtectedLocalStorage because for Blazor to access a cookie, we need to make a http request through
+    // the browser, which is annoying, and makes it easier to steal.
+    // So using this method encrypts it so even if it gets XSS'd, the attacker won't get the token in plaintext.
+    // It's not perfect but it's better than nothing.
+    // Microslop should have made cookies easier.
+    // Fuck you, Microslop.
     private string? _token;
+    private string? _username;
 
     public string BaseUrl { get; set; } = "https://karting.playbredum.ru";
-    public bool IsLoggedIn => _token != null;
+    public bool IsLoggedIn => !string.IsNullOrEmpty(_token);
+    public string Username => _username ?? "";
 
-    public ModerationService(HttpClient http)
+    public ModerationService(HttpClient http, ProtectedLocalStorage storage)
     {
         _http = http;
+        _storage = storage;
     }
+
+    public async Task InitializeAsync()
+    {
+        try
+        {
+            var tokenResult = await _storage.GetAsync<string>("mod_token");
+            if (tokenResult.Success && !string.IsNullOrEmpty(tokenResult.Value))
+                _token = tokenResult.Value;
+
+            var userResult = await _storage.GetAsync<string>("mod_username");
+            if (userResult.Success && !string.IsNullOrEmpty(userResult.Value))
+                _username = userResult.Value;
+        }
+        catch { }
+    }
+
 
     private HttpRequestMessage Req(HttpMethod method, string path)
     {
         var req = new HttpRequestMessage(method, $"{BaseUrl}{path}");
-        if (_token != null)
+        if (!string.IsNullOrEmpty(_token))
             req.Headers.Add("Cookie", $"Token={_token}");
         return req;
     }
@@ -51,6 +78,7 @@ public class ModerationService
 
     private async Task<string?> Delete(string path) =>
         await Send(Req(HttpMethod.Delete, path));
+
 
     public async Task<bool> LoginAsync(string username, string password)
     {
@@ -80,12 +108,34 @@ public class ModerationService
                 }
             }
 
+            if (!string.IsNullOrEmpty(_token))
+            {
+                try { await _storage.SetAsync("mod_token", _token); } catch { }
+                try { await _storage.SetAsync("mod_username", username); } catch { }
+                _username = username;
+            }
+
             return true;
         }
         catch { return false; }
     }
 
-    public void Logout() => _token = null;
+    public async Task Logout()
+    {
+        _token = null;
+        _username = null;
+        try { await _storage.SetAsync("mod_token", ""); } catch { }
+        try { await _storage.SetAsync("mod_username", ""); } catch { }
+    }
+
+    public void SetToken(string token)
+    {
+        _token = token;
+        try { _ = _storage.SetAsync("mod_token", token); } catch { }
+    }
+
+    public string? Token => _token;
+
 
 
     public Task<string?> GetPermissionsAsync() =>
@@ -242,7 +292,6 @@ public class ModerationService
         if (creationId != null) q += (index != null ? "&" : "?") + $"creation={creationId}";
         return Delete(q);
     }
-
 
     public Task<string?> GetModeratorsAsync(int page, int perPage) =>
         Get($"/api/moderation/moderators?page={page}&per_page={perPage}");

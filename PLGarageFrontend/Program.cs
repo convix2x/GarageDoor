@@ -5,7 +5,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddHttpClient<PLGarageFrontend.Services.PLGarageService>();
 builder.Services.AddSingleton<PLGarageFrontend.Services.StringMapService>();
-builder.Services.AddHttpClient<PLGarageFrontend.Services.ModerationService>();
+builder.Services.AddHttpClient("moderation");
+builder.Services.AddScoped<PLGarageFrontend.Services.ModerationService>(sp =>
+    new PLGarageFrontend.Services.ModerationService(
+        sp.GetRequiredService<IHttpClientFactory>().CreateClient("moderation"),
+        sp.GetRequiredService<Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedLocalStorage>()));
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
