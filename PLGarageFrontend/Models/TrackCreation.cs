@@ -128,3 +128,48 @@ public class LobbyPage
     public int TotalPages { get; set; }
     public int Page { get; set; }
 }
+
+public class Comment
+{
+    public int Id { get; set; }
+    public int PlayerCreationId { get; set; }
+    public int PlayerId { get; set; }
+    public string Username { get; set; } = "";
+    public string Body { get; set; } = "";
+    public string CreatedAt { get; set; } = "";
+    public string UpdatedAt { get; set; } = "";
+    public int RatingUp { get; set; }
+    public int RatingDown { get; set; }
+    public string Platform { get; set; } = "";
+}
+
+public class CommentsPage
+{
+    public List<Comment> Comments { get; set; } = [];
+    public int Total { get; set; }
+    public int TotalPages { get; set; }
+    public int Page { get; set; }
+}
+
+public class Review
+{
+    public int Id { get; set; }
+    public int PlayerCreationId { get; set; }
+    public int PlayerId { get; set; }
+    public string Username { get; set; } = "";
+    public string Content { get; set; } = "";
+    public string PlayerCreationName { get; set; } = "";
+    public string CreatedAt { get; set; } = "";
+    public string UpdatedAt { get; set; } = "";
+    public int ThumbsUp { get; set; }
+    public int ThumbsDown { get; set; }
+    public string Tags { get; set; } = "";
+}
+
+public class ReviewsPage
+{
+    public List<Review> Reviews { get; set; } = [];
+    public int Total { get; set; }
+    public int TotalPages { get; set; }
+    public int Page { get; set; }
+}

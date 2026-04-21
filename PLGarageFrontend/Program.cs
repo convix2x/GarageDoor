@@ -3,6 +3,23 @@ using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var lines = File.Exists("config.txt") ? File.ReadAllLines("config.txt") : Array.Empty<string>();
+
+string GetVal(string key) => lines.FirstOrDefault(l => l.StartsWith(key))?.Split('=')[1].Trim() ?? "";
+
+int httpPort = int.TryParse(GetVal("Port"), out var p1) ? p1 : 8080;
+int httpsPort = int.TryParse(GetVal("SslPort"), out var p2) ? p2 : 8443;
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(httpPort);
+
+    options.ListenAnyIP(httpsPort, listenOptions =>
+    {
+        listenOptions.UseHttps();
+    });
+});
+
 // Add services to the container.
 builder.Services.AddHttpClient<PLGarageFrontend.Services.PLGarageService>();
 builder.Services.AddSingleton<PLGarageFrontend.Services.StringMapService>();

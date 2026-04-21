@@ -1,11 +1,15 @@
-﻿using System.Xml.Linq;
+﻿using Microsoft.AspNetCore.Mvc.ViewEngines;
 using PLGarageFrontend.Models;
+using System.Xml.Linq;
 
 namespace PLGarageFrontend.Services;
 
 public class PLGarageService(HttpClient http)
 {
-    public string BaseUrl { get; set; } = "https://karting.playbredum.ru";
+
+    public string BaseUrl => File.ReadAllLines("config.txt")
+    .Select(line => line.Split('='))
+    .FirstOrDefault(parts => parts[0] == "BaseUrl")?[1] ?? "";
 
     public async Task<CreationsPage> GetTracksAsync(
         int page = 1,
@@ -463,5 +467,88 @@ public class PLGarageService(HttpClient http)
             return ParseCreationsPage(xml);
         }
         catch { return new CreationsPage(); }
+    }
+
+    public async Task<CommentsPage> GetTrackCommentsAsync(int trackId, int page = 1, int perPage = 20)
+    {
+        var url = $"{BaseUrl}/player_creation_comments.xml" +
+                  $"?filters[player_creation_id]={trackId}" +
+                  $"&page={page}&per_page={perPage}" +
+                  $"&sort_column=created_at&sort_order=desc";
+
+        try
+        {
+            var xml = await http.GetStringAsync(url);
+            var doc = XDocument.Parse(xml);
+
+            var wrapper = doc.Descendants("player_creation_comments").FirstOrDefault();
+            var result = new CommentsPage
+            {
+                Total = (int?)wrapper?.Attribute("total") ?? 0,
+                TotalPages = (int?)wrapper?.Attribute("total_pages") ?? 0,
+                Page = (int?)wrapper?.Attribute("page") ?? 1,
+            };
+
+            result.Comments = doc.Descendants("player_creation_comment")
+                .Select(x => new Comment
+                {
+                    Id = (int?)x.Attribute("id") ?? 0,
+                    PlayerCreationId = (int?)x.Attribute("player_creation_id") ?? 0,
+                    PlayerId = (int?)x.Attribute("player_id") ?? 0,
+                    Username = (string?)x.Attribute("username") ?? "",
+                    Body = (string?)x.Attribute("body") ?? "",
+                    CreatedAt = (string?)x.Attribute("created_at") ?? "",
+                    UpdatedAt = (string?)x.Attribute("updated_at") ?? "",
+                    RatingUp = (int?)x.Attribute("rating_up") ?? 0,
+                    RatingDown = (int?)x.Attribute("rating_down") ?? 0,
+                    Platform = (string?)x.Attribute("platform") ?? "",
+                })
+                .ToList();
+
+            return result;
+        }
+        catch { return new CommentsPage(); }
+    }
+
+    // doesn't look like this returns anything, but the endpoint exists, but returns nothing, so i will omit reviews for now
+    public async Task<ReviewsPage> GetTrackReviewsAsync(int trackId, int page = 1, int perPage = 20)
+    {
+        var url = $"{BaseUrl}/player_creation_reviews.xml" +
+                  $"?player_creation_id={trackId}" +
+                  $"&page={page}&per_page={perPage}";
+
+        try
+        {
+            var xml = await http.GetStringAsync(url);
+            var doc = XDocument.Parse(xml);
+
+            var wrapper = doc.Descendants("player_creation_reviews").FirstOrDefault();
+            var result = new ReviewsPage
+            {
+                Total = (int?)wrapper?.Attribute("total") ?? 0,
+                TotalPages = (int?)wrapper?.Attribute("total_pages") ?? 0,
+                Page = (int?)wrapper?.Attribute("page") ?? 1,
+            };
+
+            result.Reviews = doc.Descendants("review")
+                .Select(x => new Review
+                {
+                    Id = (int?)x.Attribute("id") ?? 0,
+                    PlayerCreationId = (int?)x.Attribute("player_creation_id") ?? 0,
+                    PlayerId = (int?)x.Attribute("player_id") ?? 0,
+                    Username = (string?)x.Attribute("username") ?? "",
+                    Content = (string?)x.Attribute("content") ?? "",
+                    PlayerCreationName = (string?)x.Attribute("player_creation_name") ?? "",
+                    CreatedAt = (string?)x.Attribute("created_at") ?? "",
+                    UpdatedAt = (string?)x.Attribute("updated_at") ?? "",
+                    ThumbsUp = (int?)x.Attribute("thumbs_up") ?? 0,
+                    ThumbsDown = (int?)x.Attribute("thumbs_down") ?? 0,
+                    Tags = (string?)x.Attribute("tags") ?? "",
+                })
+                .ToList();
+
+            return result;
+        }
+        catch { return new ReviewsPage(); }
     }
 }

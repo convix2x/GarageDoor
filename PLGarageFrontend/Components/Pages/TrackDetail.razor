@@ -143,6 +143,41 @@ else
             <button disabled="@(leaderboard.Page >= leaderboard.TotalPages)" @onclick="LbNextPage">Next →</button>
         </div>
     }
+
+    <h2>Comments</h2>
+    @if (commentsLoading)
+    {
+        <p>Loading comments...</p>
+    }
+    else if (comments == null || comments.Comments.Count == 0)
+    {
+        <p>No comments yet.</p>
+    }
+    else
+    {
+        <div class="comments-section">
+            @foreach (var comment in comments.Comments)
+            {
+                <div class="comment-card">
+                    <div class="comment-author">
+                        <div class="comment-author-info">
+                            <a href="/players/@comment.PlayerId"><strong>@comment.Username</strong></a>
+                            <span class="comment-date">@FormatDate(comment.CreatedAt)</span>
+                        </div>
+                    </div>
+                    <div class="comment-body">@comment.Body</div>
+                    <div class="comment-stats">
+                        Yays @comment.RatingUp | Boos @comment.RatingDown
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="leaderboard-pagination">
+            <button disabled="@(comments.Page <= 1)" @onclick="CommentsPrevPage">← Prev</button>
+            <span>Page @comments.Page of @comments.TotalPages (@comments.Total total)</span>
+            <button disabled="@(comments.Page >= comments.TotalPages)" @onclick="CommentsNextPage">Next →</button>
+        </div>
+    }
 }
 
 @code {
@@ -150,12 +185,18 @@ else
 
     private TrackCreation? track;
     private TrackLeaderboard? leaderboard;
+    private CommentsPage? comments;
+    private ReviewsPage? reviews;
     private string instanceName = "PL Garage";
     private bool loading = true;
     private bool lbLoading = true;
+    private bool commentsLoading = true;
+    private bool reviewsLoading = true;
     private int gameType = 701;
     private int playgroupSize = 1;
     private int lbPage = 1;
+    private int commentsPage = 1;
+    private int reviewsPage = 1;
 
     private async Task GoBack() => await JS.InvokeVoidAsync("history.back");
 
@@ -167,7 +208,11 @@ else
         instanceName = nameTask.Result;
         track = trackTask.Result;
         loading = false;
-        await LoadLeaderboard();
+        
+        var lbTask = LoadLeaderboard();
+        var commentsTask = LoadComments();
+        var reviewsTask = LoadReviews();
+        await Task.WhenAll(lbTask, commentsTask, reviewsTask);
     }
 
     private async Task LoadLeaderboard()
@@ -193,6 +238,51 @@ else
         lbLoading = true;
         leaderboard = await PLGarage.GetTrackLeaderboardAsync(Id, lbPage, gameType: gameType, playgroupSize: playgroupSize);
         lbLoading = false;
+    }
+
+    private async Task LoadComments()
+    {
+        commentsLoading = true;
+        comments = await PLGarage.GetTrackCommentsAsync(Id, commentsPage);
+        commentsLoading = false;
+    }
+
+    private async Task LoadReviews()
+    {
+        reviewsLoading = true;
+        reviews = await PLGarage.GetTrackReviewsAsync(Id, reviewsPage);
+        reviewsLoading = false;
+    }
+
+    private async Task CommentsPrevPage()
+    {
+        if (commentsPage > 1) { commentsPage--; await LoadComments(); }
+    }
+
+    private async Task CommentsNextPage()
+    {
+        if (comments is not null && commentsPage < comments.TotalPages) { commentsPage++; await LoadComments(); }
+    }
+
+    private async Task ReviewsPrevPage()
+    {
+        if (reviewsPage > 1) { reviewsPage--; await LoadReviews(); }
+    }
+
+    private async Task ReviewsNextPage()
+    {
+        if (reviews is not null && reviewsPage < reviews.TotalPages) { reviewsPage++; await LoadReviews(); }
+    }
+
+    private static string FormatDate(string dateStr)
+    {
+        if (string.IsNullOrEmpty(dateStr)) return "-";
+        try
+        {
+            var dt = DateTime.Parse(dateStr);
+            return dt.ToString("MMM d, yyyy");
+        }
+        catch { return dateStr; }
     }
 
     private static string FormatTime(float seconds)

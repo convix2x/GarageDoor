@@ -25,7 +25,9 @@ public class ModerationService
     private string? _token;
     private string? _username;
 
-    public string BaseUrl { get; set; } = "https://karting.playbredum.ru";
+    public string BaseUrl => File.ReadAllLines("config.txt")
+    .Select(line => line.Split('='))
+    .FirstOrDefault(parts => parts[0] == "BaseUrl")?[1] ?? "";
     public bool IsLoggedIn => !string.IsNullOrEmpty(_token);
     public string Username => _username ?? "";
 
