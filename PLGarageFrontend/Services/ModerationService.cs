@@ -54,8 +54,14 @@ public class ModerationService
     private HttpRequestMessage Req(HttpMethod method, string path)
     {
         var req = new HttpRequestMessage(method, $"{BaseUrl}{path}");
+
         if (!string.IsNullOrEmpty(_token))
+        {
             req.Headers.Add("Cookie", $"Token={_token}");
+
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+        }
+
         return req;
     }
 
@@ -64,10 +70,20 @@ public class ModerationService
         try
         {
             var resp = await _http.SendAsync(req);
-            if (!resp.IsSuccessStatusCode) return null;
+
+            if (!resp.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"[err] {req.Method} {req.RequestUri} returned {(int)resp.StatusCode}");
+                return null;
+            }
+
             return (await resp.Content.ReadAsStringAsync()).Trim();
         }
-        catch { return null; }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[crsh] {ex.Message}");
+            return null;
+        }
     }
 
     private async Task<string?> Get(string path) =>
@@ -301,6 +317,12 @@ public class ModerationService
 
     public Task<string?> DeleteModeratorAsync(int id) =>
         Delete($"/api/moderation/moderators/{id}");
+
+    public Task<string?> DeleteCreationAsync(int playerCreationID) =>
+        Delete($"/api/moderation/player_creations/{playerCreationID}/");
+
+    public Task<string?> BanCreationAsync(int id) =>
+        SetModerationStatusAsync(id, "3");
 
     public Task<string?> SetModeratorUsernameAsync(int id, string username) =>
         Post($"/api/moderation/{id}/set_username?username={Uri.EscapeDataString(username)}");

@@ -37,6 +37,12 @@ else
             <div class="mod-tab-item @(activeTab == "creations" ? "active" : "")" @onclick='() => activeTab = "creations"'>
                 Creation Management
             </div>
+            <div class="mod-tab-item @(activeTab == "grief" ? "active" : "")" @onclick='() => activeTab = "grief"'>
+                Good Grief!
+            </div>
+            <div class="mod-tab-item @(activeTab == "users" ? "active" : "")" @onclick='() => activeTab = "users"'>
+                Users Management
+            </div>
         </div>
 
         <div class="mod-tab-content">
@@ -136,24 +142,91 @@ else
 
             <div class="mod-tab-pane @(activeTab == "creations" ? "active" : "")">
                 <section class="mod-section">
-                    <h2>Team Picks</h2>
-                    
-                    <div class="mod-create-announcement">
-                        <h3>Team Pick a creation</h3>
-                        <div class="mod-form">
-                            <div class="mod-field">
-                                <label>Creation ID</label>
-                                <input type="number" @bind="teamPickCreationId" placeholder="Enter creation ID" />
-                            </div>
-                            <button @onclick="SetTeamPick" disabled="@settingTeamPick">
-                                @(settingTeamPick ? "Setting..." : "Set as Team Pick")
-                            </button>
-                            @if (!string.IsNullOrEmpty(teamPickMessage))
-                            {
-                                <p class="mod-message">@teamPickMessage</p>
-                            }
+                    <div class="p-3">
+                        <h3>Ban creation (BROKEN I THINK?)</h3>
+            
+                        <p>Enter a Creation ID to ban it.</p>
+
+                        <div style="margin-bottom: 15px;">
+                            <label>Creation ID:</label>
+                            <input type="number" @bind="targetCreationId" style="display: block; width: 100%; padding: 5px; margin-top: 5px;" />
                         </div>
+
+                        <button class="mod-btn-danger" @onclick="() => BanCreation(targetCreationId)">
+                            Ban it!
+                        </button>
                     </div>
+                </section>
+            </div>
+
+            <div class="mod-tab-pane @(activeTab == "users" ? "active" : "")">
+                <section class="mod-section">
+                    <h2>User Management</h2>
+        
+                    @if (loadingUsers)
+                    {
+                        <p>Loading users...</p>
+                    }
+                    else if (userList.Count == 0)
+                    {
+                        <p>No users found.</p>
+                    }
+                    else
+                    {
+                        <table class="mod-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Username</th>
+                                    <th>Banned?</th>
+                                    <th>PSN Linked</th>
+                                    <th>RPCN Linked</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var user in userList)
+                                {
+                                    <tr>
+                                        <td>@user.Id</td>
+                                        <td>@user.Username</td>
+                                        <td>
+                                            <span class="badge @(user.IsBanned ? "bg-danger" : "bg-success")">
+                                                @(user.IsBanned ? "Yes" : "No")
+                                            </span>
+                                        </td>
+                                        <td>@(user.IsPsnLinked ? "YES" : "NO")</td>
+                                        <td>@(user.IsRpcnLinked ? "YES" : "NO")</td>
+                                        <td>
+                                            <span class="badge @(user.IsBanned ? "bg-danger" : "bg-success")">
+                                                @(user.IsBanned ? "Banned" : "Active")
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if (user.IsBanned)
+                                            {
+                                                <button class="mod-btn-small btn-unban" @onclick="() => ToggleBan(user)">
+                                                    Unban
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="mod-btn-small btn-ban" @onclick="() => ToggleBan(user)">
+                                                    Ban
+                                                </button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        <div class="mod-pagination">
+                            <button @onclick="PrevUsersPage" disabled="@(usersPage <= 1 || loadingUsers)">Previous</button>
+                            <span>Page @usersPage</span>
+                            <button @onclick="NextUsersPage" disabled="@(userList.Count < perPage || loadingUsers)">Next</button>
+                        </div>
+                    }
                 </section>
             </div>
         </div>
@@ -195,6 +268,12 @@ else
     private bool settingTeamPick = false;
     private string teamPickMessage = "";
 
+    private List<UserEntry> userList = new();
+    private bool loadingUsers = false;
+    private int usersPage = 1;
+
+    private int targetCreationId;
+
     protected override Task OnInitializedAsync()
     {
         return Task.CompletedTask;
@@ -227,6 +306,7 @@ else
         catch { }
 
         await LoadAnnouncements();
+        await LoadUsers();
         StateHasChanged();
     }
 
@@ -240,13 +320,13 @@ else
             {
                 var doc = JsonDocument.Parse(result);
                 var root = doc.RootElement;
-                
+
                 if (root.TryGetProperty("Total", out var totalProp))
                 {
                     var total = totalProp.GetInt32();
                     announcementsTotalPages = (int)Math.Ceiling(total / (double)perPage);
                 }
-                
+
                 if (root.TryGetProperty("Page", out var pageProp) && pageProp.ValueKind == JsonValueKind.Array)
                 {
                     announcements = pageProp.EnumerateArray().Select(a => new Announcement
@@ -285,7 +365,7 @@ else
 
         creating = true;
         createMessage = "";
-        
+
         try
         {
             var result = await Moderation.CreateAnnouncementAsync(newLanguageCode, newSubject, newText, newPlatform);
@@ -406,4 +486,109 @@ else
             _ => platformInt.ToString()
         };
     }
+
+    private class GriefReport
+    {
+        public int Id { get; set; }
+        public int ReporterId { get; set; }
+        public string Reason { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string ImageUrl { get; set; } = "";
+    }
+
+    private class UserEntry
+    {
+        public int Id { get; set; }
+        public string Username { get; set; } = "";
+        public bool IsBanned { get; set; }
+        public bool IsPsnLinked { get; set; }
+        public bool IsRpcnLinked { get; set; }
+    }
+
+    private async Task LoadUsers()
+    {
+        loadingUsers = true;
+        try
+        {
+            var result = await Moderation.GetUsersAsync(usersPage, perPage);
+            if (result != null)
+            {
+                var doc = JsonDocument.Parse(result);
+                var root = doc.RootElement;
+
+                if (root.TryGetProperty("Page", out var pageProp) && pageProp.ValueKind == JsonValueKind.Array)
+                {
+                    userList = pageProp.EnumerateArray().Select(u => new UserEntry
+                    {
+                        Id = u.TryGetProperty("ID", out var id) ? id.GetInt32() : 0,
+                        Username = u.TryGetProperty("Username", out var name) ? name.GetString() ?? "Unknown" : "Unknown",
+                        IsBanned = u.TryGetProperty("IsBanned", out var b) && b.GetBoolean(),
+                        IsPsnLinked = u.TryGetProperty("IsPSNLinked", out var p) && p.GetBoolean(),
+                        IsRpcnLinked = u.TryGetProperty("IsRPCNLinked", out var r) && r.GetBoolean()
+                    }).ToList();
+                    Console.WriteLine($"DEBUG USER JSON: {result}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading users: {ex.Message}");
+        }
+        finally
+        {
+            loadingUsers = false;
+        }
+    }
+
+    private async Task ToggleBan(UserEntry user)
+    {
+        bool newBanStatus = !user.IsBanned;
+        string actionVerb = newBanStatus ? "ban" : "unban";
+
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
+            $"Are you sure you want to {actionVerb} {user.Username} (ID: {user.Id})?");
+
+        if (!confirmed) return;
+
+        var result = await Moderation.SetBanAsync(user.Id, newBanStatus);
+
+        if (result == "ok")
+        {
+            user.IsBanned = newBanStatus;
+            StateHasChanged();
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Server returned an error: {result}");
+        }
+    }
+
+    private async Task PrevUsersPage() { if (usersPage > 1) { usersPage--; await LoadUsers(); } }
+    private async Task NextUsersPage() { usersPage++; await LoadUsers(); }
+
+    private async Task BanCreation(int id)
+    {
+        var result = await Moderation.SetModerationStatusAsync(id, "3");
+        
+        if (result != null)
+        {
+            Console.WriteLine($"[MOD] Creation {id} has been banned. Server said: {result}");
+        }
+        else
+        {
+            Console.WriteLine($"[ERR] Failed to ban creation {id}. Check permissions!");
+        }
+
+        var result2 = await Moderation.SetModerationStatusAsync(id, "2");
+        
+        if (result2 != null)
+        {
+            Console.WriteLine($"[MOD] Creation {id} has been banned. Server said: {result2}");
+        }
+        else
+        {
+            Console.WriteLine($"[ERR] Failed to ban creation {id}. Check permissions!");
+        }
+    }
+
 }
