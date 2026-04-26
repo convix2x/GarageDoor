@@ -7,7 +7,7 @@ var lines = File.Exists("config.txt") ? File.ReadAllLines("config.txt") : Array.
 
 string GetVal(string key) => lines.FirstOrDefault(l => l.StartsWith(key))?.Split('=')[1].Trim() ?? "";
 
-int httpPort = int.TryParse(GetVal("Port"), out var p1) ? p1 : 8080;
+int httpPort = int.TryParse(GetVal("Port"), out var p1) ? p1 : 8280;
 int httpsPort = int.TryParse(GetVal("SslPort"), out var p2) ? p2 : 8443;
 
 builder.WebHost.ConfigureKestrel(options =>

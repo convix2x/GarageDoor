@@ -76,3 +76,24 @@
     font-size: 0.8rem;
     color: #888;
 }
+
+
+@media (max-width: 600px) {
+    .home-columns {
+        display: block;
+        gap: 2rem;
+        margin-top: 1.5rem;
+        align-items: flex-start;
+    }
+    .home-scroll {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-height: 600px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 0.5rem;
+        background: #fff;
+    }
+}

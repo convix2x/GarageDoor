@@ -42,7 +42,12 @@ else if (result == null || result.Photos.Count == 0)
 else
 {
     <p>Showing @result.Photos.Count of @result.Total photos — Page @result.Page / @result.TotalPages</p>
-
+    <div class="pagination-bar">
+        <button disabled="@(result.Page <= 1)" @onclick="PrevPage">← Prev</button>
+        <span>Page @result.Page of @result.TotalPages</span>
+        <button disabled="@(result.Page >= result.TotalPages)" @onclick="NextPage">Next →</button>
+    </div> <br>
+    
     <div class="photo-grid">
         @foreach (var photo in result.Photos)
         {
