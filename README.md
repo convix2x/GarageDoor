@@ -14,9 +14,14 @@ You will want to change these values.
 # Credits
 
 convix - Lead dev
+
 cotamilhas - notifying me about Microsoft and blazor wonk breaking navbar, dev of PL Garage
+
 Losba - Mobile updates, and qols to the software itself
+
 jackcaver - dev of PL Garage
+
 derole1 - dev of PL Garage
+
 ennuo - dev of PL Garage and Bombd
 
