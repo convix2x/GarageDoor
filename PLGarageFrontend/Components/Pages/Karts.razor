@@ -41,6 +41,12 @@ else if (result?.Tracks is { Count: 0 })
 else if (result is not null)
 {
     <p>Showing @result.Tracks.Count of @result.Total karts — Page @result.Page / @result.TotalPages</p>
+    
+    <div class="pagination-bar">
+        <button disabled="@(result.Page <= 1)" @onclick="PrevPage">← Prev</button>
+        <span>Page @result.Page of @result.TotalPages</span>
+        <button disabled="@(result.Page >= result.TotalPages)" @onclick="NextPage">Next →</button>
+    </div> <br>
 
     <div class="track-list">
         @foreach (var kart in result.Tracks)
