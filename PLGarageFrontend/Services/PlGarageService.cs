@@ -322,8 +322,8 @@ public class PLGarageService(HttpClient http)
     public async Task<CreationsPage> GetTeamPicksAsync(bool isMnr = false, string platform = "PS3", int perPage = 40)
     {
         var url = isMnr
-            ? $"{BaseUrl}/player_creations/team_picks.xml?per_page={perPage}&platform={platform}&sort_column=created_at&sort_order=desc&filters[player_creation_type]=TRACK"
-            : $"{BaseUrl}/tracks/ufg_picks.xml?per_page={perPage}&platform={platform}&sort_column=created_at&sort_order=desc";
+            ? $"{BaseUrl}/player_creations/team_picks.xml?page=1&per_page={perPage}&platform={platform}&sort_column=created_at&sort_order=desc&filters[player_creation_type]=TRACK"
+            : $"{BaseUrl}/tracks/ufg_picks.xml?filters[player_creation_type]=TRACK&page=1&per_page={perPage}&platform={platform}";
 
         try
         {
@@ -510,7 +510,59 @@ public class PLGarageService(HttpClient http)
         catch { return new CommentsPage(); }
     }
 
+    public async Task<CommentsPage> GetProfileCommentsAsync(int playerId, int page = 1, int perPage = 20)
+    {
+        var url = $"{BaseUrl}/player_comments.xml" +
+                  $"?filters[player_id]={playerId}" +
+                  $"&page={page}&per_page={perPage}" +
+                  $"&sort_column=created_at&sort_order=desc";
+
+        try
+        {
+            var xml = await http.GetStringAsync(url);
+            var doc = XDocument.Parse(xml);
+
+            var wrapper = doc.Descendants("player_comments").FirstOrDefault();
+            var result = new CommentsPage
+            {
+                Total = (int?)wrapper?.Attribute("total") ?? 0,
+                TotalPages = (int?)wrapper?.Attribute("total_pages") ?? 0,
+                Page = (int?)wrapper?.Attribute("page") ?? 1,
+            };
+
+            result.Comments = doc.Descendants("player_comment")
+                .Select(x => new Comment
+                {
+                    Id = (int?)x.Attribute("id") ?? 0,
+                    AuthorId = (int?)x.Attribute("author_id") ?? 0,
+                    PlayerId = (int?)x.Attribute("player_id") ?? 0,
+                    Username = (string?)x.Attribute("author_username") ?? "",
+                    Body = (string?)x.Attribute("body") ?? "",
+                    CreatedAt = (string?)x.Attribute("created_at") ?? "",
+                    UpdatedAt = (string?)x.Attribute("updated_at") ?? "",
+                    RatingUp = (int?)x.Attribute("rating_up") ?? 0,
+                    RatingDown = (int?)x.Attribute("rating_down") ?? 0,
+                    Platform = (string?)x.Attribute("platform") ?? "",
+                })
+                .ToList();
+
+            return result;
+        }
+        catch { return new CommentsPage(); }
+    }
+
+
+    // dev1:
     // doesn't look like this returns anything, but the endpoint exists, but returns nothing, so i will omit reviews for now
+    // dev2: it does 
+
+    // dev2: 
+    // but actualy for some reason it worked before and now it returns this:
+    // This page contains the following errors:
+    // error on line 1 at column 499: xmlParseCharRef: invalid xmlChar value 0
+    // Below is a rendering of the page up to the first error.
+    // 0Successful completion
+    
     public async Task<ReviewsPage> GetTrackReviewsAsync(int trackId, int page = 1, int perPage = 20)
     {
         var url = $"{BaseUrl}/player_creation_reviews.xml" +

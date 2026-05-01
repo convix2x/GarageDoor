@@ -13,11 +13,12 @@
 .home-scroll {
     display: flex;
     flex-direction: column;
+    corner-shape: squircle;
     gap: 0.5rem;
     max-height: 600px;
     overflow-y: auto;
     border: 1px solid #ddd;
-    border-radius: 6px;
+    border-radius: 25%;
     padding: 0.5rem;
     background: #fff;
 }
@@ -68,7 +69,6 @@
     }
 
 .home-card-sub {
-    display: flex;
     font-size: 0.8rem;
     color: #666;
 }

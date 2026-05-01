@@ -134,7 +134,9 @@ public class Comment
     public int Id { get; set; }
     public int PlayerCreationId { get; set; }
     public int PlayerId { get; set; }
+    public int AuthorId { get; set; }
     public string Username { get; set; } = "";
+    public string AuthorUsername { get; set; } = "";
     public string Body { get; set; } = "";
     public string CreatedAt { get; set; } = "";
     public string UpdatedAt { get; set; } = "";

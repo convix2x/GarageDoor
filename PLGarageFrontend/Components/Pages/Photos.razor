@@ -47,7 +47,7 @@ else
         <span>Page @result.Page of @result.TotalPages</span>
         <button disabled="@(result.Page >= result.TotalPages)" @onclick="NextPage">Next →</button>
     </div> <br>
-    
+
     <div class="photo-grid">
         @foreach (var photo in result.Photos)
         {
@@ -63,15 +63,15 @@ else
                     </span>
                     @if (photo.TrackId <= 0 || photo.TrackId == 575 || photo.TrackId == 4912)
                     {
-                        <span>📍 @GetTrackName(photo.TrackId)</span>
+                        <span class="photo-meta-track">📍 @GetTrackName(photo.TrackId)</span>
                     }
                     else if (trackNames.ContainsKey(photo.TrackId))
                     {
-                        <span>📍 <a href="/tracks/@photo.TrackId">@GetTrackName(photo.TrackId)</a></span>
+                        <span class="photo-meta-track">📍 <a href="/tracks/@photo.TrackId">@GetTrackName(photo.TrackId)</a></span>
                     }
                     else
                     {
-                        <span>📍 The Moon</span>
+                        <span class="photo-meta-track">📍 The Moon</span>
                     }
                 </div>
             </div>

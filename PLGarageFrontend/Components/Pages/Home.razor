@@ -39,8 +39,8 @@
                             </div>
                         </a>
                         <div class="home-card-info">
-                            <div><a href="/tracks/@c.Id"><b>@c.Name</b></a></div>
-                            <div class="home-card-sub">by <a href="/players/@c.PlayerId">@c.Username</a> · @c.Game</div>
+                            <div><a href="/tracks/@c.Id" class="LA"><b>@c.Name</b></a></div>
+                            <div class="home-card-sub"><img src="@($"{PLGarage.BaseUrl}/player_avatars/{c.PlayerId}/primary.png")" alt="" height="20" width="20"><a href="/players/@c.PlayerId" class="LT">@c.Username</a> · @c.Game</div>
                             <div class="home-card-stats">♥ @c.Hearts | ⬇ @c.Downloads</div>
                         </div>
                     </div>
@@ -48,7 +48,7 @@
             </div>
         }
     </div>
-
+    <br>
     <div class="home-column">
         <h2>⭐ Team Picks</h2>
         @if (teamPicksLoading)
@@ -73,11 +73,11 @@
                             </div>
                         </a>
                         <div class="home-card-info">
-                            <div><a href="/tracks/@c.Id"><b>@c.Name</b></a></div>
-                            <div class="home-card-sub">by <a href="/players/@c.PlayerId">@c.Username</a> · @c.Game</div>
+                            <div><a href="/tracks/@c.Id" class="LA"><b>@c.Name</b></a></div>
+                            <div class="home-card-sub"><img src="@($"{PLGarage.BaseUrl}/player_avatars/{c.PlayerId}/primary.png")" alt="" height="20" width="20"> <a href="/players/@c.PlayerId" class="LT">@c.Username</a> · @c.Game</div>
                             <div class="home-card-stats">♥ @c.Hearts | ⬇ @c.Downloads</div>
                         </div>
-                    </div>
+                    </div> 
                 }
             </div>
         }

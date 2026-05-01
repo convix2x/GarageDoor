@@ -29,11 +29,14 @@
 
     <select @bind="sortColumn" @bind:after="ReloadAsync">
         <option value="created_at">Newest</option>
+        <option value="coolness">Cool Levels</option>
         <option value="hearts">Most Hearted</option>
         <option value="downloads">Most Downloaded</option>
         <option value="races_started">Most Played</option>
         <option value="rating_up">Highest Rated</option>
         <option value="views">Most Viewed</option>
+        <option value="rating_up_this_week">Top this week</option>
+        <option value="rating_down">Highest Hated</option>
     </select>
 </div>
 
@@ -66,8 +69,8 @@ else if (result is not null)
                 </a>
                 <div class="track-info">
                     <div class="track-name">
-                        <a href="/tracks/@track.Id">@track.Name</a>
-                        <span class="track-author">by <a href="/players/@track.PlayerId">@track.Username</a></span>
+                        <a href="/tracks/@track.Id">@track.Name</a> <br>
+                        <span class="track-author"><img src="@($"{PLGarage.BaseUrl}/player_avatars/{track.PlayerId}/primary.png")" alt="" height="20" width="20"><a href="/players/@track.PlayerId">@track.Username</a></span>
                     </div>
                     @if (!string.IsNullOrWhiteSpace(track.Description))
                     {
@@ -101,7 +104,7 @@ else if (result is not null)
                 </div>
             </div>
         }
-    </div>
+    </div> <br>
 
     <div class="pagination-bar">
         <button disabled="@(result.Page <= 1)" @onclick="PrevPage">← Prev</button>
