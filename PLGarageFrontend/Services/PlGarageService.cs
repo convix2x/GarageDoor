@@ -562,6 +562,9 @@ public class PLGarageService(HttpClient http)
     // error on line 1 at column 499: xmlParseCharRef: invalid xmlChar value 0
     // Below is a rendering of the page up to the first error.
     // 0Successful completion
+
+    // dev1:
+    // strange lmao
     
     public async Task<ReviewsPage> GetTrackReviewsAsync(int trackId, int page = 1, int perPage = 20)
     {
@@ -602,5 +605,43 @@ public class PLGarageService(HttpClient http)
             return result;
         }
         catch { return new ReviewsPage(); }
+    }
+
+    public async Task<ActivityPage> GetActivityLogAsync(int playerId, int page = 1, int perPage = 20)
+    {
+        var url = $"{BaseUrl}/activity_log.xml?player_id={playerId}&page={page}&per_page={perPage}";
+
+        try
+        {
+            var xml = await http.GetStringAsync(url);
+            var doc = XDocument.Parse(xml);
+
+            var wrapper = doc.Descendants("activities").FirstOrDefault();
+            var result = new ActivityPage
+            {
+                Total = (int?)wrapper?.Attribute("total") ?? 0,
+                TotalPages = (int?)wrapper?.Attribute("total_pages") ?? 0,
+                Page = (int?)wrapper?.Attribute("page") ?? 1,
+            };
+
+            result.Activities = doc.Descendants("activity")
+                .SelectMany(a => a.Descendants("event").Select(e => new ActivityEntry
+                {
+                    Type = (string?)a.Attribute("type") ?? "",
+                    Topic = (string?)e.Attribute("type") ?? "",
+                    Details = (string?)e.Attribute("details") ?? "",
+                    CreatorUsername = (string?)e.Attribute("creator_username") ?? "",
+                    CreatorId = (int?)e.Attribute("creator_id") ?? 0,
+                    PlayerId = (int?)e.Attribute("player_id") ?? 0,
+                    PlayerUsername = (string?)a.Attribute("player_username") ?? "",
+                    PlayerCreationName = (string?)a.Attribute("player_creation_name") ?? "",
+                    PlayerCreationId = (int?)a.Attribute("player_creation_id") ?? 0,
+                    Timestamp = (string?)e.Attribute("timestamp") ?? "",
+                }))
+                .ToList();
+
+            return result;
+        }
+        catch { return new ActivityPage(); }
     }
 }

@@ -1,5 +1,6 @@
 ﻿namespace PLGarageFrontend.Models;
 
+// this is supposed to be for tracks only, but we just repurposed it for the general models.
 public class TrackCreation
 {
     public int Id { get; set; }
@@ -174,4 +175,26 @@ public class ReviewsPage
     public int Total { get; set; }
     public int TotalPages { get; set; }
     public int Page { get; set; }
+}
+
+public class ActivityEntry
+{
+    public string Type { get; set; } = "";
+    public string Topic { get; set; } = "";
+    public string Details { get; set; } = "";
+    public string CreatorUsername { get; set; } = "";
+    public int CreatorId { get; set; }
+    public int PlayerId { get; set; }
+    public string PlayerUsername { get; set; } = "";
+    public string PlayerCreationName { get; set; } = "";
+    public int PlayerCreationId { get; set; }
+    public string Timestamp { get; set; } = "";
+}
+
+public class ActivityPage
+{
+    public int Total { get; set; }
+    public int TotalPages { get; set; }
+    public int Page { get; set; }
+    public List<ActivityEntry> Activities { get; set; } = new();
 }
