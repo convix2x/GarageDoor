@@ -24,199 +24,304 @@ else
 
     <button @onclick="GoBack">← Back</button>
     <div class="profile-header">
-        <img class="profile-avatar"
-             src="@($"{PLGarage.BaseUrl}/player_avatars/{Id}/primary.png")"
-             width="80" height="80"
+        <img class="profile-avatar" src="@($"{PLGarage.BaseUrl}/player_avatars/{Id}/primary.png")" width="80" height="80"
              onerror="this.style.display='none'" />
         <div class="profile-header-info">
-            <h1>@profile.Username</h1>
+            @if (profile.Username == "ufg")
+            {
+                <h1>@profile.Username</h1>
+            }
+            else
+            {
+                <h1>@profile.Username</h1>
+            }
+            
             @if (!string.IsNullOrWhiteSpace(profile.Quote))
             {
-                <p class="profile-quote">"@profile.Quote"</p>
+                @if (profile.Username == "ufg")
+                {
+                    <p class="profile-quote">"@profile.Quote" Those are devs. They're like big guys. - Anonymous frontend developer.
+                        <small>- definatly not losba</small>
+                    </p>
+                }
+                else
+                {
+                    <p class="profile-quote">"@profile.Quote"</p>
+                }
             }
+
+            <div class="profile-meta">
+                @if (profile.Username == "ufg")
+                {
+                    <span>@profile.Presence</span>
+                    <span>Member since: @profile.CreatedAt</span>
+                    <span>Skill level: Game maker</span>
+                    <span>It's so funny that i can mannualy add stuff thru cod.e.e.e.e haaaahaaahaa </span>
+                    <img src="https://pic.rtbcdn.ru/video/2026-03-24/5b/81/5b81d664519d3ea4afe37f760f7f5c43.jpg"
+                         alt="trol face added by losba. Broken. Or not? (file is 404ing for no reason so i will replace it with a link!!)"
+                         height="100px" />
+                }
+                else
+                {
+                    <span>@profile.Presence</span>
+                    <span>Member since: @profile.CreatedAt</span>
+                    <span>Skill level: @profile.SkillLevel</span>
+                    <div style="display:flex;"><img class="profile-sack"
+                                                        src="@($"{PLGarage.BaseUrl}/player_avatars/{Id}/smiley.png")" width="80" height="80"
+                                                        onerror="this.style.display='none'" />
+                        <span class="PHearts">♥@profile.Hearts</span>
+                    </div>
+                }
+
+            </div>
         </div>
     </div>
-
-    <div class="profile-meta">
-        <span>Status: @profile.Presence</span>
-        <span>Member since: @profile.CreatedAt</span>
-        <span>Skill level: @profile.SkillLevel</span>
+    <div class="controls-row">
+        <div class="button-group">
+            <button @onclick='() => activeTab = "Comments"' disabled="@(activeTab == "Comments")">Comments</button>
+            <button @onclick='() => activeTab = "CLBPK"' disabled="@(activeTab == "CLBPK")">Creations (LBPK)</button>
+            <button @onclick='() => activeTab = "CMNR"' disabled="@(activeTab == "CMNR")">Creations (MNR)</button>
+            <button @onclick='() => activeTab = "CMRT"' disabled="@(activeTab == "CMRT")">Creations (MNR:RT)</button>
+            <button @onclick='() => activeTab = "Stats"' disabled="@(activeTab == "Stats")">Stats</button>
+        </div>
     </div>
-
-    <h2>Creations</h2>
-    <div class="stat-row">
-        <span class="stat-label">LBPK Tracks Published</span>
-        <span class="stat-value">@profile.TotalTracks</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">MNR Tracks Published</span>
-        <span class="stat-value">@mnrTrackCount</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">MNR Mods Published</span>
-        <span class="stat-value">@mnrModCount</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">MNR Karts Published</span>
-        <span class="stat-value">@mnrKartCount</span>
-    </div>
-
-    <h2>LBP Karting</h2>
-    <div class="stat-row">
-        <span class="stat-label">Hearts</span>
-        <span class="stat-value">@profile.Hearts</span>
-    </div>
-
-    <h2>ModNation Stats</h2>
-    <div class="stat-row">
-        <span class="stat-label">Points</span>
-        <span class="stat-value">@profile.Points</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">Experience Points</span>
-        <span class="stat-value">@profile.ExperiencePoints</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">Creator Points</span>
-        <span class="stat-value">@profile.CreatorPoints</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">Rating</span>
-        <span class="stat-value">@profile.Rating</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">Longest Drift</span>
-        <span class="stat-value">@profile.LongestDrift</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">Longest Hang Time</span>
-        <span class="stat-value">@profile.LongestHangTime</span>
-    </div>
-
-    <h2>Racing Performance (MNR)</h2>
-    <div class="stat-row">
-        <span class="stat-label">Online Races</span>
-        <span class="stat-value">@profile.OnlineRaces</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">Wins</span>
-        <span class="stat-value">@profile.OnlineWins</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">Finished</span>
-        <span class="stat-value">@profile.OnlineFinished</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">Forfeit</span>
-        <span class="stat-value">@profile.OnlineForfeit</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">Disconnected</span>
-        <span class="stat-value">@profile.OnlineDisconnected</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">Win Streak</span>
-        <span class="stat-value">@profile.WinStreak</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">Longest Win Streak</span>
-        <span class="stat-value">@profile.LongestWinStreak</span>
-    </div>
-
-    <h2>Tracks – LBP Karting</h2>
-    @if (tracksLoading)
+    @switch (activeTab)
     {
-        <p>Loading...</p>
-    }
-    else if (lbpkTracks == null || lbpkTracks.Tracks.Count == 0)
-    {
-        <p>No LBPK tracks published.</p>
-    }
-    else
-    {
-        <div class="track-list">
-            @foreach (var track in lbpkTracks.Tracks)
+        case "Comments":
+            @if (commentsLoading)
             {
-                <div class="track-card">
-                    <div class="track-preview">
-                        <a href="/tracks/@track.Id">
-                            <img src="@($"{PLGarage.BaseUrl}/player_creations/{track.Id}/preview_image.png")"
-                                 alt="@track.Name"
-                                 onerror="this.parentElement.innerHTML=''" />
-                        </a>
-                    </div>
-                    <div class="track-info">
-                        <div class="track-name"><a href="/tracks/@track.Id">@track.Name</a></div>
-                        @if (!string.IsNullOrWhiteSpace(track.Description))
-                        {
-                            <div class="track-description">@track.Description</div>
-                        }
-                        <div class="track-stats">♥ @track.Hearts | ⬇ @track.Downloads | 🏁 @track.RacesStarted | 👁 @track.Views</div>
-                        <div class="tag-container">
-                            @if (track.IsTeamPick)
-                            {
-                                <span class="tag-badge tag-teampick">⭐ Team Pick</span>
-                            }
-                            @foreach (var tag in track.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                            {
-                                <span class="tag-badge">@tag</span>
-                            }
+                <h2>Comments (About the person)</h2>
+                <p>Loading comments...</p>
+            }
+            else if (comments == null || comments.Comments.Count == 0)
+            {
+                <h2>Comments (About the person)</h2>
+                <p>No comments yet.</p>
+            }
+            else
+            {
+                <h2>Profile Comments (@(comments.Comments.Count))</h2>
+                <div class="comments-section">
+                    @foreach (var comment in comments.Comments)
+                    {
+                        <div class="comment-card">
+                            <div class="comment-author">
+                                <div class="comment-author-info">
+                                    <div style="display: flex; gap: 0.2rem;">
+                                        <img class="comment-avatar"
+                                             src="@($"{PLGarage.BaseUrl}/player_avatars/{comment.AuthorId}/primary.png")" width="80"
+                                             height="80" onerror="this.style.display='none'" />
+                                        <div style="display: block;">
+                                            <a href="/players/@comment.PlayerId"><strong>@comment.Username</strong></a> <br/>
+                                            <span class="comment-date">@FormatDate(comment.CreatedAt)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="comment-body">@comment.Body</div>
+                            <div class="comment-stats">
+                                Yays @comment.RatingUp | Boos @comment.RatingDown
+                            </div>
                         </div>
-                    </div>
+                    }
+                </div>
+                <div class="leaderboard-pagination">
+                    <button disabled="@(comments.Page <= 1)" @onclick="CommentsPrevPage">← Prev</button>
+                    <span>Page @comments.Page of @comments.TotalPages (@comments.Total total)</span>
+                    <button disabled="@(comments.Page >= comments.TotalPages)" @onclick="CommentsNextPage">Next →</button>
                 </div>
             }
-        </div>
-    }
-
-    <h2>Tracks – ModNation Racers</h2>
-    @if (tracksLoading)
-    {
-        <p>Loading...</p>
-    }
-    else if (mnrTracks == null || mnrTracks.Tracks.Count == 0)
-    {
-        <p>No MNR tracks published.</p>
-    }
-    else
-    {
-        <div class="track-list">
-            @foreach (var track in mnrTracks.Tracks)
+            break;
+        case "CLBPK":
+            <h2>Tracks – LBP Karting</h2> <br />
+            @if (tracksLoading)
             {
-                <div class="track-card">
-                    <div class="track-preview">
-                        <a href="/tracks/@track.Id">
-                            <img src="@($"{PLGarage.BaseUrl}/player_creations/{track.Id}/preview_image.png")"
-                                 alt="@track.Name"
-                                 onerror="this.parentElement.innerHTML=''" />
-                        </a>
-                    </div>
-                    <div class="track-info">
-                        <div class="track-name"><a href="/tracks/@track.Id">@track.Name</a></div>
-                        @if (!string.IsNullOrWhiteSpace(track.Description))
-                        {
-                            <div class="track-description">@track.Description</div>
-                        }
-                        <div class="track-stats">♥ @track.Hearts | ⬇ @track.Downloads | 🏁 @track.RacesStarted | 👁 @track.Views</div>
-                        <div class="tag-container">
-                            @if (track.IsTeamPick)
-                            {
-                                <span class="tag-badge tag-teampick">⭐ Team Pick</span>
-                            }
-                            @foreach (var tag in track.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                            {
-                                <span class="tag-badge">@tag</span>
-                            }
+                <p>Loading...</p>
+            }
+            else if (lbpkTracks == null || lbpkTracks.Tracks.Count == 0)
+            {
+                <p>No LBPK tracks published.</p>
+            }
+            else
+            {
+                <div class="track-list">
+                    @foreach (var track in lbpkTracks.Tracks)
+                    {
+                        <div class="track-card">
+                            <div class="track-preview">
+                                <a href="/tracks/@track.Id">
+                                    <img src="@($"{PLGarage.BaseUrl}/player_creations/{track.Id}/preview_image.png")" alt="@track.Name"
+                                         onerror="this.parentElement.innerHTML=''" />
+                                </a>
+                            </div>
+                            <div class="track-info">
+                                <div class="track-name"><a href="/tracks/@track.Id">@track.Name</a></div>
+                                @if (!string.IsNullOrWhiteSpace(track.Description))
+                                {
+                                    <div class="track-description">@track.Description</div>
+                                }
+                                <div class="track-stats">♥ @track.Hearts | ⬇ @track.Downloads | 🏁 @track.RacesStarted | 👁 @track.Views
+                                </div>
+                                <div class="tag-container">
+                                    @if (track.IsTeamPick)
+                                    {
+                                        <span class="tag-badge tag-teampick">⭐ Team Pick</span>
+                                    }
+                                    @foreach (var tag in track.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries |
+                                                                                                                                                        StringSplitOptions.TrimEntries))
+                                    {
+                                        <span class="tag-badge">@tag</span>
+                                    }
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    }
                 </div>
             }
-        </div>
+            break;
+        case "CMNR":
+            <h2>Tracks – ModNation Racers</h2> <br />
+            @if (tracksLoading)
+            {
+                <p>Loading...</p>
+            }
+            else if (mnrTracks == null || mnrTracks.Tracks.Count == 0)
+            {
+                <p>No MNR tracks published.</p>
+            }
+            else
+            {
+                <div class="track-list">
+                    @foreach (var track in mnrTracks.Tracks)
+                    {
+                        <div class="track-card">
+                            <div class="track-preview">
+                                <a href="/tracks/@track.Id">
+                                    <img src="@($"{PLGarage.BaseUrl}/player_creations/{track.Id}/preview_image.png")" alt="@track.Name"
+                                         onerror="this.parentElement.innerHTML=''" />
+                                </a>
+                            </div>
+                            <div class="track-info">
+                                <div class="track-name"><a href="/tracks/@track.Id">@track.Name</a></div>
+                                @if (!string.IsNullOrWhiteSpace(track.Description))
+                                {
+                                    <div class="track-description">@track.Description</div>
+                                }
+                                <div class="track-stats">♥ @track.Hearts | ⬇ @track.Downloads | 🏁 @track.RacesStarted | 👁 @track.Views
+                                </div>
+                                <div class="tag-container">
+                                    @if (track.IsTeamPick)
+                                    {
+                                        <span class="tag-badge tag-teampick">⭐ Team Pick</span>
+                                    }
+                                    @foreach (var tag in track.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries |
+                                                                                                                                                StringSplitOptions.TrimEntries))
+                                    {
+                                        <span class="tag-badge">@tag</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            break;
+        case "CMRT":
+            <h2>Tracks – ModNation Racers: RoadTrip</h2><br />
+            <p>WIP. Also, hey! this worked first try lol. - <small style="font-size: small;">losba the idiot</small> </p>
+            break;
+        case "Stats":
+
+            <h2>Creations</h2>
+            <div class="stat-row">
+                <span class="stat-label">LBPK Tracks Published</span>
+                <span class="stat-value">@profile.TotalTracks</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">MNR Tracks Published</span>
+                <span class="stat-value">@mnrTrackCount</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">MNR Mods Published</span>
+                <span class="stat-value">@mnrModCount</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">MNR Karts Published</span>
+                <span class="stat-value">@mnrKartCount</span>
+            </div>
+
+            <h2>LBP Karting</h2>
+            <div class="stat-row">
+                <span class="stat-label">Hearts</span>
+                <span class="stat-value">@profile.Hearts</span>
+            </div>
+
+            <h2>ModNation Stats</h2>
+            <div class="stat-row">
+                <span class="stat-label">Points</span>
+                <span class="stat-value">@profile.Points</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Experience Points</span>
+                <span class="stat-value">@profile.ExperiencePoints</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Creator Points</span>
+                <span class="stat-value">@profile.CreatorPoints</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Rating</span>
+                <span class="stat-value">@profile.Rating</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Longest Drift</span>
+                <span class="stat-value">@profile.LongestDrift</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Longest Hang Time</span>
+                <span class="stat-value">@profile.LongestHangTime</span>
+            </div>
+
+            <h2>Racing Performance (MNR)</h2>
+            <div class="stat-row">
+                <span class="stat-label">Online Races</span>
+                <span class="stat-value">@profile.OnlineRaces</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Wins</span>
+                <span class="stat-value">@profile.OnlineWins</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Finished</span>
+                <span class="stat-value">@profile.OnlineFinished</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Forfeit</span>
+                <span class="stat-value">@profile.OnlineForfeit</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Disconnected</span>
+                <span class="stat-value">@profile.OnlineDisconnected</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Win Streak</span>
+                <span class="stat-value">@profile.WinStreak</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Longest Win Streak</span>
+                <span class="stat-value">@profile.LongestWinStreak</span>
+            </div>
+            break;
     }
 }
 
+
+
+
+
 @code {
     [Parameter] public int Id { get; set; }
-
+    private string activeTab = "Comments";
     private PlayerProfile? profile;
     private CreationsPage? lbpkTracks;
     private CreationsPage? mnrTracks;
@@ -226,12 +331,16 @@ else
     private int mnrTrackCount;
     private int mnrModCount;
     private int mnrKartCount;
+    private CommentsPage? comments;
+    private bool commentsLoading = true;
+    private int commentsPage = 1;
     private async Task GoBack() => await JS.InvokeVoidAsync("history.back");
     protected override async Task OnInitializedAsync()
     {
         var nameTask = PLGarage.GetInstanceNameAsync();
         var profileTask = PLGarage.GetPlayerInfoAsync(Id);
         await Task.WhenAll(nameTask, profileTask);
+        await LoadComments();
         instanceName = nameTask.Result;
         profile = profileTask.Result;
         loading = false;
@@ -256,5 +365,40 @@ else
             mnrTracks = mnrTask.Result;
         }
         tracksLoading = false;
+        
+    }
+
+    private async Task CommentsPrevPage()
+    {
+        if (commentsPage > 1) { commentsPage--; await LoadComments(); }
+    }
+
+    private async Task CommentsNextPage()
+    {
+        if (comments is not null && commentsPage < comments.TotalPages) { commentsPage++; await LoadComments(); }
+    }
+    private async Task LoadComments()
+    {
+        commentsLoading = true;
+        comments = await PLGarage.GetProfileCommentsAsync(Id, commentsPage);
+        commentsLoading = false;
+    }
+
+    private static string FormatDate(string dateStr)
+    {
+        if (string.IsNullOrEmpty(dateStr)) return "-";
+        try
+        {
+            var dt = DateTime.Parse(dateStr);
+            return dt.ToString("MMM d, yyyy");
+        }
+        catch { return dateStr; }
+    }
+
+    private static string FormatTime(float seconds)
+    {
+        if (seconds <= 0) return "-";
+        var ts = TimeSpan.FromSeconds(seconds);
+        return $"{(int)ts.TotalMinutes}:{ts.Seconds:D2}.{ts.Milliseconds:D3}";
     }
 }

@@ -1,0 +1,11 @@
+﻿.track-author a{
+    font-weight: normal;
+    font-size: larger;
+    color: #88ff00;
+    font-family: SubHeader;
+}
+
+.track-description {
+    font-size: 0.9rem;
+    color: #ffffff;
+}

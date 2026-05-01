@@ -51,7 +51,7 @@ else if (result is not null)
     <div class="track-list">
         @foreach (var kart in result.Tracks)
         {
-            <a href="/karts/@kart.Id">
+            
                 <div class="track-card">
                     <div class="track-preview">
                         <img src="@($"{PLGarage.BaseUrl}/player_creations/{kart.Id}/preview_image.png")"
@@ -60,7 +60,7 @@ else if (result is not null)
                     </div>
                     <div class="track-info">
                         <div class="track-name"><a href="/karts/@kart.Id">@kart.Name</a></div>
-                        <div>by <a href="/players/@kart.PlayerId">@kart.Username</a></div>
+                        <div><a href="/players/@kart.PlayerId">@kart.Username</a></div>
                         @if (!string.IsNullOrWhiteSpace(kart.Description))
                         {
                             <div>@kart.Description</div>
@@ -78,7 +78,7 @@ else if (result is not null)
                         </div>
                     </div>
                 </div>
-            </a>
+            
         }
     </div>
 
