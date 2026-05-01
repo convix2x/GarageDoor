@@ -253,10 +253,10 @@ public class PLGarageService(HttpClient http)
         }
         catch { return null; }
     }
-    public async Task<CreationsPage> GetTracksByUsernameAsync(string username, bool isMnr = false, string platform = "PS3")
+    public async Task<CreationsPage> GetTracksByUsernameAsync(string username, bool isMnr = false, string platform = "PS3", string type = "TRACK")
     {
         var url = isMnr
-            ? $"{BaseUrl}/player_creations/search.xml?filters[player_creation_type]=TRACK&filters[username]={Uri.EscapeDataString(username)}&per_page=100&platform={platform}&sort_column=created_at&sort_order=desc"
+            ? $"{BaseUrl}/player_creations/search.xml?filters[player_creation_type]={Uri.EscapeDataString(type)}&filters[username]={Uri.EscapeDataString(username)}&per_page=100&platform={platform}&sort_column=created_at&sort_order=desc"
             : $"{BaseUrl}/tracks.xml?filters%5Busername%5D={Uri.EscapeDataString(username)}&per_page=100&platform={platform}&sort_column=created_at&sort_order=desc";
         Console.WriteLine($"Fetching: {url}");
         try
@@ -446,12 +446,12 @@ public class PLGarageService(HttpClient http)
         catch { return new LobbyPage(); }
     }
 
-    public async Task<CreationsPage> GetTracksByPlayerIdAsync(int playerId, bool isMnr = false, string platform = "PS3", string username = "")
+    public async Task<CreationsPage> GetTracksByPlayerIdAsync(int playerId, bool isMnr = false, string platform = "PS3", string username = "", string type = "TRACK")
     {
         string url;
         if (isMnr)
             url = $"{BaseUrl}/player_creations/friends_view.xml" +
-                  $"?filters[player_creation_type]=TRACK" +
+                  $"?filters[player_creation_type]={Uri.EscapeDataString(type)}" +
                   $"&filters[username]={Uri.EscapeDataString(username)}" +
                   $"&page=1&per_page=100&platform={platform}" +
                   $"&sort_column=created_at&sort_order=desc";
