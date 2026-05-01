@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using PLGarageFrontend.Models
 @using PLGarageFrontend.Services
+@using System.Formats.Asn1
 @inject PLGarageService PLGarage
 @inject IJSRuntime JS
 
@@ -27,62 +28,39 @@ else
         <img class="profile-avatar" src="@($"{PLGarage.BaseUrl}/player_avatars/{Id}/primary.png")" width="80" height="80"
              onerror="this.style.display='none'" />
         <div class="profile-header-info">
-            @if (profile.Username == "ufg")
-            {
+
                 <h1>@profile.Username</h1>
-            }
-            else
-            {
-                <h1>@profile.Username</h1>
-            }
+
             
             @if (!string.IsNullOrWhiteSpace(profile.Quote))
             {
-                @if (profile.Username == "ufg")
-                {
-                    <p class="profile-quote">"@profile.Quote" Those are devs. They're like big guys. - Anonymous frontend developer.
-                        <small>- definatly not losba</small>
-                    </p>
-                }
-                else
-                {
+
                     <p class="profile-quote">"@profile.Quote"</p>
-                }
+
             }
 
             <div class="profile-meta">
-                @if (profile.Username == "ufg")
-                {
+
                     <span>@profile.Presence</span>
-                    <span>Member since: @profile.CreatedAt</span>
-                    <span>Skill level: Game maker</span>
-                    <span>It's so funny that i can mannualy add stuff thru cod.e.e.e.e haaaahaaahaa </span>
-                    <img src="https://pic.rtbcdn.ru/video/2026-03-24/5b/81/5b81d664519d3ea4afe37f760f7f5c43.jpg"
-                         alt="trol face added by losba. Broken. Or not? (file is 404ing for no reason so i will replace it with a link!!)"
-                         height="100px" />
-                }
-                else
-                {
-                    <span>@profile.Presence</span>
-                    <span>Member since: @profile.CreatedAt</span>
+                    <span>Member since: @FormatDate(profile.CreatedAt)</span>
                     <span>Skill level: @profile.SkillLevel</span>
                     <div style="display:flex;"><img class="profile-sack"
-                                                        src="@($"{PLGarage.BaseUrl}/player_avatars/{Id}/smiley.png")" width="80" height="80"
-                                                        onerror="this.style.display='none'" />
+                                src="@($"{PLGarage.BaseUrl}/player_avatars/{Id}/smiley.png")" width="80" height="80"
+                                onerror="this.style.display='none'" />
                         <span class="PHearts">♥@profile.Hearts</span>
                     </div>
-                }
+
 
             </div>
         </div>
     </div>
     <div class="controls-row">
         <div class="button-group">
-            <button @onclick='() => activeTab = "Comments"' disabled="@(activeTab == "Comments")">Comments</button>
-            <button @onclick='() => activeTab = "CLBPK"' disabled="@(activeTab == "CLBPK")">Creations (LBPK)</button>
-            <button @onclick='() => activeTab = "CMNR"' disabled="@(activeTab == "CMNR")">Creations (MNR)</button>
-            <button @onclick='() => activeTab = "CMRT"' disabled="@(activeTab == "CMRT")">Creations (MNR:RT)</button>
-            <button @onclick='() => activeTab = "Stats"' disabled="@(activeTab == "Stats")">Stats</button>
+            <button @onclick='async () => activeTab = "Comments"' disabled="@(activeTab == "Comments")">Comments</button>
+            <button @onclick='async () => { activeTab = "CLBPK"; Plt = "PS3";  await ReloadLBPK();}' disabled="@(activeTab == "CLBPK")">Creations (LBPK)</button>
+            <button @onclick='async () => { activeTab = "CMNR"; Plt = "PS3"; await ReLoadMNRS(); }' disabled="@(activeTab == "CMNR")">Creations (MNR)</button>
+            <button @onclick='async () => { activeTab = "CMRT"; Plt = "PSV"; await ReLoadMNRS(); }' disabled="@(activeTab == "CMRT")">Creations (MNR:RT)</button>
+            <button @onclick='async () => activeTab = "Stats"' disabled="@(activeTab == "Stats")">Stats</button>
         </div>
     </div>
     @switch (activeTab)
@@ -90,12 +68,12 @@ else
         case "Comments":
             @if (commentsLoading)
             {
-                <h2>Comments (About the person)</h2>
+                <h2>Profile Comments</h2>
                 <p>Loading comments...</p>
             }
             else if (comments == null || comments.Comments.Count == 0)
             {
-                <h2>Comments (About the person)</h2>
+                <h2>Profile Comments</h2>
                 <p>No comments yet.</p>
             }
             else
@@ -140,10 +118,12 @@ else
             }
             else if (lbpkTracks == null || lbpkTracks.Tracks.Count == 0)
             {
+                <button @onclick='async () => { await ReloadLBPK(); }'>Reload</button> <br>
                 <p>No LBPK tracks published.</p>
             }
             else
             {
+                <button @onclick='async () => { await ReloadLBPK(); }' ">Reload</button> <br>
                 <div class="track-list">
                     @foreach (var track in lbpkTracks.Tracks)
                     {
@@ -180,18 +160,34 @@ else
             }
             break;
         case "CMNR":
-            <h2>Tracks – ModNation Racers</h2> <br />
+            <h2>@(CreationType)S – ModNation Racers</h2> <br>
             @if (tracksLoading)
             {
                 <p>Loading...</p>
             }
             else if (mnrTracks == null || mnrTracks.Tracks.Count == 0)
             {
+                    <div class="controls-row">
+                        <div class="button-group">
+                            <button @onclick='async () => { CreationType = "TRACK"; await ReLoadMNRS(); }' disabled="@(CreationType == "TRACK")">TRACKS</button>
+                            <button @onclick='async () => {CreationType = "CHARACTER"; await ReLoadMNRS();}' disabled="@(CreationType == "CHARACTER")">MODS</button>
+                            <button @onclick='async () => { CreationType = "KART"; await ReLoadMNRS(); }' disabled="@(CreationType == "KART")">KARTS</button>
+                        </div>
+                    </div>
+                    <button @onclick='async () => { await ReLoadMNRS(); }' style="padding:5px;">Reload</button> <br/>
                 <p>No MNR tracks published.</p>
             }
             else
             {
                 <div class="track-list">
+                                        <div class="controls-row">
+                        <div class="button-group">
+                            <button @onclick='async () => { CreationType = "TRACK"; await ReLoadMNRS(); }' disabled="@(CreationType == "TRACK")">TRACKS</button>
+                            <button @onclick='async () => {CreationType = "CHARACTER"; await ReLoadMNRS();}' disabled="@(CreationType == "CHARACTER")">MODS</button>
+                            <button @onclick='async () => { CreationType = "KART"; await ReLoadMNRS(); }' disabled="@(CreationType == "KART")">KARTS</button>
+                        </div>
+                    </div>
+                    <button @onclick='async () => { await ReLoadMNRS(); }' style="padding:5px;">Reload</button> <br>
                     @foreach (var track in mnrTracks.Tracks)
                     {
                         <div class="track-card">
@@ -227,8 +223,67 @@ else
             }
             break;
         case "CMRT":
-            <h2>Tracks – ModNation Racers: RoadTrip</h2><br />
-            <p>WIP. Also, hey! this worked first try lol. - <small style="font-size: small;">losba the idiot</small> </p>
+            <h2>@(CreationType)S – ModNation Racers: RoadTrip</h2> <br>
+            @if (tracksLoading)
+            {
+                <p>Loading...</p>
+            }
+            else if (mnrTracks == null || mnrTracks.Tracks.Count == 0)
+            {
+                    <div class="controls-row">
+                        <div class="button-group">
+                            <button @onclick='async () => { CreationType = "TRACK"; await ReLoadMNRS(); }' disabled="@(CreationType == "TRACK")">TRACKS</button>
+                            <button @onclick='async () => {CreationType = "CHARACTER"; await ReLoadMNRS();}' disabled="@(CreationType == "CHARACTER")">MODS</button>
+                            <button @onclick='async () => { CreationType = "KART"; await ReLoadMNRS(); }' disabled="@(CreationType == "KART")">KARTS</button>
+                        </div>
+                    </div>
+                    <button @onclick='async () => { await ReLoadMNRS(); }' style="padding:5px;">Reload</button> <br/>
+                <p>No MNR:RT tracks published.</p>
+            }
+            else
+            {
+                <div class="track-list">
+                                        <div class="controls-row">
+                        <div class="button-group">
+                            <button @onclick='async () => { CreationType = "TRACK"; await ReLoadMNRS(); }' disabled="@(CreationType == "TRACK")">TRACKS</button>
+                            <button @onclick='async () => {CreationType = "CHARACTER"; await ReLoadMNRS();}' disabled="@(CreationType == "CHARACTER")">MODS</button>
+                            <button @onclick='async () => { CreationType = "KART"; await ReLoadMNRS(); }' disabled="@(CreationType == "KART")">KARTS</button>
+                        </div>
+                    </div>
+                    <button @onclick='async () => { await ReLoadMNRS(); }' style="padding:5px;">Reload</button> <br>
+                    @foreach (var track in mnrTracks.Tracks)
+                    {
+                        <div class="track-card">
+                            <div class="track-preview">
+                                <a href="/tracks/@track.Id">
+                                    <img src="@($"{PLGarage.BaseUrl}/player_creations/{track.Id}/preview_image.png")" alt="@track.Name"
+                                         onerror="this.parentElement.innerHTML=''" />
+                                </a>
+                            </div>
+                            <div class="track-info">
+                                <div class="track-name"><a href="/tracks/@track.Id">@track.Name</a></div>
+                                @if (!string.IsNullOrWhiteSpace(track.Description))
+                                {
+                                    <div class="track-description">@track.Description</div>
+                                }
+                                <div class="track-stats">♥ @track.Hearts | ⬇ @track.Downloads | 🏁 @track.RacesStarted | 👁 @track.Views
+                                </div>
+                                <div class="tag-container">
+                                    @if (track.IsTeamPick)
+                                    {
+                                        <span class="tag-badge tag-teampick">⭐ Team Pick</span>
+                                    }
+                                    @foreach (var tag in track.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries |
+                                                                                                                                                StringSplitOptions.TrimEntries))
+                                    {
+                                        <span class="tag-badge">@tag</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
             break;
         case "Stats":
 
@@ -321,7 +376,10 @@ else
 
 @code {
     [Parameter] public int Id { get; set; }
+    private string Plt = "PS3";
+    private string Username = "null";
     private string activeTab = "Comments";
+    private string CreationType = "TRACK";
     private PlayerProfile? profile;
     private CreationsPage? lbpkTracks;
     private CreationsPage? mnrTracks;
@@ -335,6 +393,23 @@ else
     private bool commentsLoading = true;
     private int commentsPage = 1;
     private async Task GoBack() => await JS.InvokeVoidAsync("history.back");
+
+    private async Task ReloadLBPK(){
+        if (profile != null)
+        {
+            var lbpkTask = PLGarage.GetTracksByPlayerIdAsync(Id, isMnr: false, username: profile.Username);
+            await lbpkTask;
+            lbpkTracks = lbpkTask.Result;
+        }
+    }
+    private async Task ReLoadMNRS()
+    {
+        if (profile != null)
+        {
+            var mnrTask = PLGarage.GetTracksByPlayerIdAsync(Id, isMnr: true, platform: Plt ,username: profile.Username, type: CreationType);
+            mnrTracks = await PLGarage.GetTracksByPlayerIdAsync(Id, isMnr: true, platform: Plt ,username: Username, type: CreationType);
+        }
+    }
     protected override async Task OnInitializedAsync()
     {
         var nameTask = PLGarage.GetInstanceNameAsync();
@@ -343,6 +418,7 @@ else
         await LoadComments();
         instanceName = nameTask.Result;
         profile = profileTask.Result;
+        
         loading = false;
 
         if (profile != null)
@@ -353,8 +429,8 @@ else
             var mnrKartPS3Task = PLGarage.GetCreationCountAsync(Id, "KART", "PS3");
             var mnrKartPSVTask = PLGarage.GetCreationCountAsync(Id, "KART", "PSV");
             var lbpkTask = PLGarage.GetTracksByPlayerIdAsync(Id, isMnr: false, username: profile.Username);
-            var mnrTask = PLGarage.GetTracksByPlayerIdAsync(Id, isMnr: true, username: profile.Username);
-
+            var mnrTask = PLGarage.GetTracksByPlayerIdAsync(Id, isMnr: true, platform: Plt ,username: profile.Username, type: CreationType);
+            Username = profile.Username;
             await Task.WhenAll(mnrTrackCountTask, mnrModPS3Task, mnrModPSVTask,
                                mnrKartPS3Task, mnrKartPSVTask, lbpkTask, mnrTask);
 
