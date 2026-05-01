@@ -83,6 +83,7 @@ else
             <button @onclick='() => activeTab = "CMNR"' disabled="@(activeTab == "CMNR")">Creations (MNR)</button>
             <button @onclick='() => activeTab = "CMRT"' disabled="@(activeTab == "CMRT")">Creations (MNR:RT)</button>
             <button @onclick='() => activeTab = "Stats"' disabled="@(activeTab == "Stats")">Stats</button>
+            <button @onclick='async () => { activeTab = "Activity"; if (activity == null) await LoadActivity(); }' disabled="@(activeTab == "Activity")">Recent Activity</button>
         </div>
     </div>
     @switch (activeTab)
@@ -312,6 +313,52 @@ else
                 <span class="stat-value">@profile.LongestWinStreak</span>
             </div>
             break;
+        case "Activity":
+            <h2>@profile.Username's Recent Activity</h2>
+            @if (activityLoading)
+            {
+                <p>Loading...</p>
+            }
+            else if (activity == null || activity.Activities.Count == 0)
+            {
+                <p>No recent activity.</p>
+            }
+            else
+            {
+                <div class="comments-section">
+                    @foreach (var entry in activity.Activities)
+                    {
+                        <div class="comment-card">
+                            <div class="comment-author">
+                                <div class="comment-author-info">
+                                    <strong>@FormatActivityType(string.IsNullOrEmpty(entry.Topic) ? entry.Type : entry.Topic)</strong>
+                                    <span class="comment-date">@FormatDate(entry.Timestamp)</span>
+                                </div>
+                            </div>
+                            <div class="comment-body">
+                                @if (!string.IsNullOrEmpty(entry.Details))
+                                {
+                                    <span>@entry.Details</span>
+                                }
+                                else if (entry.PlayerCreationId != 0)
+                                {
+                                    <a href="/tracks/@entry.PlayerCreationId">@(string.IsNullOrEmpty(entry.PlayerCreationName) ? $"Track #{entry.PlayerCreationId}" : entry.PlayerCreationName)</a>
+                                }
+                                else if (entry.PlayerId != 0)
+                                {
+                                    <a href="/players/@entry.PlayerId">@entry.PlayerUsername</a>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="leaderboard-pagination">
+                    <button disabled="@(activity.Page <= 1)" @onclick="ActivityPrevPage">← Prev</button>
+                    <span>Page @activity.Page of @activity.TotalPages (@activity.Total total)</span>
+                    <button disabled="@(activity.Page >= activity.TotalPages)" @onclick="ActivityNextPage">Next →</button>
+                </div>
+            }
+            break;
     }
 }
 
@@ -335,6 +382,9 @@ else
     private bool commentsLoading = true;
     private int commentsPage = 1;
     private async Task GoBack() => await JS.InvokeVoidAsync("history.back");
+    private ActivityPage? activity;
+    private bool activityLoading = false;
+    private int activityPage = 1;
     protected override async Task OnInitializedAsync()
     {
         var nameTask = PLGarage.GetInstanceNameAsync();
@@ -401,4 +451,36 @@ else
         var ts = TimeSpan.FromSeconds(seconds);
         return $"{(int)ts.TotalMinutes}:{ts.Seconds:D2}.{ts.Milliseconds:D3}";
     }
+
+    private async Task LoadActivity()
+    {
+        activityLoading = true;
+        activity = await PLGarage.GetActivityLogAsync(Id, activityPage);
+        activityLoading = false;
+    }
+
+    private async Task ActivityPrevPage()
+    {
+        if (activityPage > 1) { activityPage--; await LoadActivity(); }
+    }
+
+    private async Task ActivityNextPage()
+    {
+        if (activity is not null && activityPage < activity.TotalPages) { activityPage++; await LoadActivity(); }
+    }
+
+    private static string FormatActivityType(string type) => type switch
+    {
+        "player_creation_reviewed" => "Track Reviewed",
+        "player_creation_rated_up" => "Creation Rated Up",
+        "player_creation_rated_down" => "Creation Rated Down",
+        "player_creation_hearted" => "Track Hearted",
+        "player_creation_downloaded" => "Creation Downloaded",
+        "player_creation_event" => "Creation Event",
+        "player_hearted" => "Player Hearted",
+        "player_event" => "Player Event",
+        "player_creation_created" => "Creation Created",
+        "race_event" => "Race",
+        _ => type // fallback to raw string for unknowns (trophies in native language etc.)
+    };
 }
