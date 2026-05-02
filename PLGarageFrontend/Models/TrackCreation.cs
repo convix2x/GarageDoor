@@ -198,3 +198,12 @@ public class ActivityPage
     public int Page { get; set; }
     public List<ActivityEntry> Activities { get; set; } = new();
 }
+
+public class AnnouncementEntry
+{
+    public int Id { get; set; }
+    public string Subject { get; set; } = "";
+    public string Text { get; set; } = "";
+    public string LanguageCode { get; set; } = "";
+    public string CreatedAt { get; set; } = "";
+}

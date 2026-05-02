@@ -644,4 +644,24 @@ public class PLGarageService(HttpClient http)
         }
         catch { return new ActivityPage(); }
     }
+
+    public async Task<List<AnnouncementEntry>> GetAnnouncementsAsync(string platform = "WEB")
+    {
+        try
+        {
+            var xml = await http.GetStringAsync($"{BaseUrl}/announcements.xml?platform={platform}");
+            var doc = XDocument.Parse(xml);
+            return doc.Descendants("announcement")
+                .Select(x => new AnnouncementEntry
+                {
+                    Id = (int?)x.Attribute("id") ?? 0,
+                    Subject = (string?)x.Attribute("subject") ?? "",
+                    Text = x.Value,
+                    LanguageCode = (string?)x.Attribute("language_code") ?? "",
+                    CreatedAt = (string?)x.Attribute("created_at") ?? "",
+                })
+                .ToList();
+        }
+        catch { return new List<AnnouncementEntry>(); }
+    }
 }

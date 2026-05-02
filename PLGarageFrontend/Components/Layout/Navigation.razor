@@ -1,5 +1,6 @@
 ﻿@rendermode InteractiveServer
 @using PLGarageFrontend.Services
+@using PLGarageFrontend.Models
 @inject PLGarageService PLGarage
 
 <nav class="navbar">
@@ -18,11 +19,35 @@
     </div>
 </nav>
 
+@if (announcements != null && announcements.Count > 0)
+{
+    <div class="announcement-banner">
+        <marquee behavior="scroll" direction="left" scrollamount="4">
+            @foreach (var a in announcements)
+            {
+                <span class="announcement-item">
+                    <strong>@a.Subject</strong>
+                    @if (!string.IsNullOrWhiteSpace(a.Text))
+                    {
+                        <span> - @a.Text</span>
+                    }
+                </span>
+                <span class="announcement-separator">|</span>
+            }
+        </marquee>
+    </div>
+}
+
 @code {
     private string instanceName = "PL Garage";
+    private List<AnnouncementEntry>? announcements;
 
     protected override async Task OnInitializedAsync()
     {
-        instanceName = await PLGarage.GetInstanceNameAsync();
+        var nameTask = PLGarage.GetInstanceNameAsync();
+        var announcementsTask = PLGarage.GetAnnouncementsAsync();
+        await Task.WhenAll(nameTask, announcementsTask);
+        instanceName = nameTask.Result;
+        announcements = announcementsTask.Result;
     }
 }

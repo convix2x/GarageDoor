@@ -294,3 +294,21 @@ tr:last-child td {
     }
 
 }
+
+.announcement-banner {
+    background: linear-gradient(90deg, #f5c800, #ffe566, #f5c800);
+    border-bottom: 1px solid #c9a800;
+    padding: 0.4rem 0;
+    font-size: 0.85rem;
+    color: #2a1f00;
+    overflow: hidden;
+}
+
+.announcement-item {
+    margin-right: 1rem;
+}
+
+.announcement-separator {
+    margin-right: 1rem;
+    opacity: 0.5;
+}
